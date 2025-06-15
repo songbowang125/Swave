@@ -55,7 +55,7 @@ python Swave.py -h
 
 ## Usage (Demo data)
 
-1. Download the all the files from ["Demo link"](https://drive.google.com/drive/folders/1Sek8eYqJMOhsagwRCGBin53htOy6ndH7?usp=sharing), and store them in the same folder.
+1. Download the all the files from ["Demo link"](https://drive.google.com/drive/folders/1t0L0pBVYk4GhKXg1IcSsVkCw7PtdbaI5?usp=drive_link), and store them in the same folder.
 ```commandline
 The demo data contains a pangenome graph built on T2T reference and three samples (six haplotypes).
 ```
