@@ -1,0 +1,15 @@
+name: Swave-env
+channels:
+  - anaconda
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python==3.7.9
+  - pytorch==1.10.1
+  - numpy==1.21.6
+  - pysam==0.15.3
+  - pip
+  - pip:
+    - opencv-python
+    - matplotlib
