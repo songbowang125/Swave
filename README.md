@@ -1,7 +1,7 @@
 ## Swave
 Swave detects structural variants (SVs) and complex SVs from a pangenome graph constructed on one or multiple genome assemblies.  
 
-<div align=left><img width=80% height=80% src="https://github.com/songbowang125/Swave/blob/main/workflow.png"/></div> 
+<div align=left><img width=80% height=80% src="https://github.com/songbowang125/Swave/blob/main/workflow.svg"/></div> 
 
 
 ## License
