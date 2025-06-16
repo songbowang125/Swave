@@ -29,7 +29,7 @@ setup(
 
       keywords=['Swave', 'Structural variants(SV)', 'Complex structural variants', 'Assembly', 'Pangenome'],
 
-      packages = ['src', 'src/pack_dotplot', 'src/pack_graph', 'src/pack_model', 'src/pack_sv'],
+      packages = ['.', 'src', 'src/pack_dotplot', 'src/pack_graph', 'src/pack_model', 'src/pack_sv'],
       data_files = [("", ["LICENSE"])],
 
       zip_safe=False,
