@@ -6,6 +6,7 @@ import pysam
 import sys
 import argparse
 from src.version import __version__
+import pkg_resources
 
 
 def parse_arguments(arguments=sys.argv[1:]):
@@ -120,7 +121,8 @@ def check_arguments(options):
 
     options.kmer_size = 30
 
-    options.model_path = "src/pack_model/LSTM-l1-fc64-bi.pth"
+    # options.model_path = "src/pack_model/LSTM-l1-fc64-bi.pth"
+    options.model_path = pkg_resources.resource_filename('src', 'pack_model/LSTM-l1-fc64-bi.pth')
 
     options.model_device = "cpu"
     options.model_cpu = 8

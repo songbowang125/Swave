@@ -30,6 +30,10 @@ setup(
       keywords=['Swave', 'Structural variants(SV)', 'Complex structural variants', 'Assembly', 'Pangenome'],
 
       packages = ['.', 'src', 'src/pack_dotplot', 'src/pack_graph', 'src/pack_model', 'src/pack_sv'],
+      include_package_data=True,
+      package_data={
+            'src': ['pack_model/LSTM-l1-fc64-bi.pth']
+      },
       data_files = [("", ["LICENSE"])],
 
       zip_safe=False,
