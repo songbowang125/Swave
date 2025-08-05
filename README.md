@@ -14,7 +14,7 @@ For more information, please contact with Songbo Wang (songbowang125@163.com) or
 - [Installation](#installation)
 - [Usage_1 (Demo data)](#usage_1-demo-data)
 - [Usage_2 (User data for minigraph)](#usage_2-user-data-for-minigraph)
-- [Usage_3 (User data for minigraph-cactus and pggb)](#usage_2-user-data-for-minigraph-cactus-and-pggb)
+- [Usage_3 (User data for minigraph-cactus and pggb)](#usage_3-user-data-for-minigraph-cactus-and-pggb)
 
 
 ## Installation
