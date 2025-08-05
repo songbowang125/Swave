@@ -112,7 +112,7 @@ def remove_snarl_nodes_from_path(raw_path):
 
 def retrieve_snarl_from_vg_decomposed(gfa_minigraph, options):
 
-    logging.info("Preprocessing: Load asm VCF file from {}".format(options.decomposed_vcf))
+    logging.info("Preprocessing: Load allele info from {}".format(options.decomposed_vcf))
 
     with pysam.VariantFile(options.decomposed_vcf) as fin:
 
@@ -128,7 +128,7 @@ def retrieve_snarl_from_vg_decomposed(gfa_minigraph, options):
             snarl_ref_start = record.start + 1
             snarl_ref_end = record.stop + 1
 
-            if options.spec_snarls is not None and snarl_id not in options.spec_snarls:
+            if options.spec_snarl is not None and snarl_id not in options.spec_snarl:
                 continue
 
             snarl_id_include_nodes = re.findall(r'[><]([a-zA-Z0-9]+)', snarl_id)
@@ -139,6 +139,9 @@ def retrieve_snarl_from_vg_decomposed(gfa_minigraph, options):
 
             snarl_end_node_id = snarl_id_include_nodes[1]
             snarl_end_node_orient = snarl_id_include_nodes_orients[1]
+
+            if not (snarl_start_node_orient == ">" and snarl_end_node_orient == ">"):
+                continue
 
             if snarl_id not in gfa_minigraph.snarls:
                 gfa_minigraph.snarls[snarl_id] = Snarl(snarl_start_node_id, snarl_start_node_orient, snarl_end_node_id, snarl_end_node_orient, snarl_ref_chrom, snarl_ref_start, snarl_ref_end)
@@ -275,17 +278,17 @@ def retrieve_snarl_from_minigraph_call_population(spec_asm_name, spec_asm_path, 
 
     if os.path.exists(spec_asm_vcf_path_1):
 
-        logging.info("Preprocessing: Load asm VCF file from {}".format(spec_asm_vcf_path_1))
+        logging.info("Preprocessing: Load allele info from {}".format(spec_asm_vcf_path_1))
         spec_asm_vcf_path = spec_asm_vcf_path_1
 
     elif os.path.exists(spec_asm_vcf_path_2):
 
-        logging.info("Preprocessing: Load asm VCF file from {}".format(spec_asm_vcf_path_2))
+        logging.info("Preprocessing: Load allele info from {}".format(spec_asm_vcf_path_2))
         spec_asm_vcf_path = spec_asm_vcf_path_2
 
     else:
 
-        logging.info("Preprocessing: Generate asm VCF file from {}".format(spec_asm_vcf_path_2))
+        logging.info("Preprocessing: Generate allele info from {}".format(spec_asm_vcf_path_2))
 
         os.system("{} -t {} -xasm --call {} {} > {}".format(options.minigraph, options.thread_num, options.gfa_path, spec_asm_path, spec_asm_vcf_path_2))
 
@@ -421,17 +424,17 @@ def retrieve_snarl_from_minigraph_call_single(spec_asm_name, spec_asm_path, gfa_
 
     if os.path.exists(spec_asm_vcf_path_1):
 
-        logging.info("Loading asm VCF file from {}".format(spec_asm_vcf_path_1))
+        logging.info("Loading allele info from {}".format(spec_asm_vcf_path_1))
         spec_asm_vcf_path = spec_asm_vcf_path_1
 
     elif os.path.exists(spec_asm_vcf_path_2):
 
-        logging.info("Loading asm VCF file from {}".format(spec_asm_vcf_path_2))
+        logging.info("Loading allele info from {}".format(spec_asm_vcf_path_2))
         spec_asm_vcf_path = spec_asm_vcf_path_2
 
     else:
 
-        logging.info("Generating asm VCF file from {}".format(spec_asm_vcf_path_2))
+        logging.info("Generating allele info from {}".format(spec_asm_vcf_path_2))
 
         os.system("{} -t {} -xasm --call {} {} > {}".format(options.minigraph, options.thread_num, options.gfa_path, spec_asm_path, spec_asm_vcf_path_2))
 

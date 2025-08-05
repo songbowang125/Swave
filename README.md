@@ -9,6 +9,14 @@ Swave detects structural variants (SVs) and complex SVs from a pangenome graph c
 Swave is free for non-commercial use by academic, government, and non-profit/not-for-profit institutions. A commercial version of the software is available and licensed through Xi’an Jiaotong University.
 For more information, please contact with Songbo Wang (songbowang125@163.com) or Kai Ye (kaiye@xjtu.edu.cn).
 
+## Contents
+
+- [Installation](#installation)
+- [Usage_1 (Demo data)](#usage_1-demo-data)
+- [Usage_2 (User data for minigraph)](#usage_2-user-data-for-minigraph)
+- [Usage_3 (User data for minigraph-cactus and pggb)](#usage_2-user-data-for-minigraph-cactus-and-pggb)
+
+
 ## Installation
 
 ### Operation systems
@@ -53,7 +61,7 @@ python Swave.py -h
 
 
 
-## Usage (Demo data)
+## Usage_1 (Demo data)
 
 1. Download the all the files from ["Demo link"](https://drive.google.com/drive/folders/1t0L0pBVYk4GhKXg1IcSsVkCw7PtdbaI5?usp=drive_link), and store them in the same folder.
 ```commandline
@@ -73,7 +81,7 @@ One log file and two result files are generated, including:
     swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
 ```
 
-## Usage (User data)
+## Usage_2 (User data for minigraph)
 
 ### 1. Prepare your data:
 
@@ -129,7 +137,7 @@ However, Swave executes them one-by-one. To save time, it is recommended to run 
   ```
 2.2 Run:
   ```commandline
-    Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_path pangenome.gfa --output_path ./
+    Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source minigraph --gfa_path pangenome.gfa --output_path ./
   ```
 2.3 Check outputs:
 ```commandline
@@ -138,7 +146,35 @@ However, Swave executes them one-by-one. To save time, it is recommended to run 
     swave.sample_level.vcf (Multi-allelic outputs)
     swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
 ```
+## Usage_3 (User data for minigraph-cactus and pggb)
 
+### 1. Prepare your data:
+1.1 Basiclly, you need to prepare the pangenome gfa file and the vcf file from vg deconstruct:
+  ```commandline
+    pangenome.gfa.gz
+    
+    pangenome.raw.vcf.gz
+  ```
+Swave uses the pangenome.raw.vcf.gz to extract allele information, and doesn't need to run the 'minigraph --call' commands. 
+
+The pangenome.raw.vcf.gz file is an automated output part of the minigraph-cactus and pggb pipeline.
+
+If you need to generate it by your self, run 'vg deconstruct -e -a pangenome.gfa.gz | bgzip > pangenome.raw.vcf.gz && tabix pangenome.raw.vcf.gz'
+
+
+### 2. Run Swave
+
+2.1 Run:
+  ```commandline
+    Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source cactus (or pggb) --gfa_path pangenome.gfa.gz --decomposed_vcf pangenome.raw.vcf.gz --output_path ./
+  ```
+2.2 Check outputs:
+```commandline
+  One log file and two result files are generated, including:
+    swave.log
+    swave.sample_level.vcf (Multi-allelic outputs)
+    swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
+```
 
 ## Contact
 If you have any questions, please feel free to contact: songbowang125@163.com

@@ -800,7 +800,7 @@ def prediction_to_ssv_comps(matrix, prediction, dotplot_type, sub_dotplot_ref_ch
     return ssv_components
 
 
-def interpret_one_bin(bin_index, gfa_minigraph, options):
+def interpret_one_bin(bin_index, snarls, options):
     try:
         logging.info("Interpreting parallel bin index {}".format(bin_index))
 
@@ -899,7 +899,7 @@ def interpret_one_bin(bin_index, gfa_minigraph, options):
                 """
 
         logging.info("Recording parallel bin index {}".format(bin_index))
-        vcf_records, vcf_records_split = generate_vcf_records(interpret_res_dict, gfa_minigraph, options)
+        vcf_records, vcf_records_split = generate_vcf_records(interpret_res_dict, snarls, options)
 
         hap_level_vcf_path = os.path.join(options.output_path, "tmp.matrix.{}.res.vcf".format(bin_index))
         hap_level_vcf_fout = open(hap_level_vcf_path, "w")
@@ -1085,14 +1085,14 @@ def calculate_ac_af_an_ns(gt_list, options):
     return AC, AF, AN, NS
 
 
-def generate_vcf_records(interpret_res_dict, gfa_minigraph, options):
+def generate_vcf_records(interpret_res_dict, snarls, options):
 
     vcf_records = []
     vcf_records_split = []
 
     for top_snarl_id in interpret_res_dict:
 
-        snarl = gfa_minigraph.snarls[top_snarl_id]
+        snarl = snarls[top_snarl_id]
         snarl_subsnarl_csv_dict = interpret_res_dict[top_snarl_id]
 
         # # STEP: check if there are alt_paths that fail the prediction proess
@@ -1131,13 +1131,27 @@ def generate_vcf_records(interpret_res_dict, gfa_minigraph, options):
     return vcf_records, vcf_records_split
 
 
-def interpret_prediction_to_variant_parallel(gfa_minigraph, parallel_bin_num, options):
+def interpret_prediction_to_variant_parallel(gfa_obj, parallel_bin_num, options):
     parallel_pool = Pool(options.thread_num)
     parallel_pool_res = []
 
+    snarls = gfa_obj.snarls
     for bin_index in range(parallel_bin_num):
         # interpret_one_bin(bin_index, gfa_minigraph, options)
-        parallel_pool_res.append(parallel_pool.apply_async(interpret_one_bin, (bin_index, gfa_minigraph, options)))
+        # parallel_pool_res.append(parallel_pool.apply_async(interpret_one_bin, (bin_index, snarls, options)))
+
+        # # load snarl infos for each bin
+        predict_npz_path = os.path.join(options.output_path, "tmp.matrix.{}.res.npz".format(bin_index))
+        predict_res_dict = np.load(predict_npz_path)
+
+        bin_snarls = {}
+        for matrix_id in predict_res_dict:
+            matrix_id_split = matrix_id.split(".")
+            top_snarl_id = matrix_id_split[0]
+
+            bin_snarls[top_snarl_id] = snarls[top_snarl_id]
+
+        parallel_pool_res.append(parallel_pool.apply_async(interpret_one_bin, (bin_index, bin_snarls, options)))
 
     parallel_pool.close()
     parallel_pool.join()

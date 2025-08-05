@@ -23,7 +23,7 @@ def parse_arguments(arguments=sys.argv[1:]):
     parser_call.add_argument('--ref_path', dest="ref_path", type=os.path.abspath, required=True, help='Absolute path to reference')
     parser_call.add_argument('--gfa_path', dest="gfa_path", type=os.path.abspath, required=True, help='Absolute path to gfa')
 
-    parser_call.add_argument('--gfa_source', dest="gfa_source", choices=['minigraph', 'cactus', 'pggb'], default='minigraph', help='The source of GFA. Choose from [minigraph, cactus, pggb]. For Now, only minigraph is well supported.')
+    parser_call.add_argument('--gfa_source', dest="gfa_source", choices=['minigraph', 'cactus', 'pggb'], default='minigraph', help='The source of GFA. Choose from [minigraph, cactus, pggb].')
     parser_call.add_argument('--decomposed_vcf', dest="decomposed_vcf", type=os.path.abspath, required=False, default=None, help='The decomposed VCF from vg (could be processed by vcfbub and vcfwave), required for cactus and pggb graphs')
 
     parser_call.add_argument('--output_mode', dest="output_mode", choices=['auto', 'population', 'single'], default='auto', help='Mode of output. Choose from [auto, population, single]')
@@ -113,7 +113,7 @@ def check_arguments(options):
     else:
         if options.gfa_source in ["cactus", "pggb"]:
             if options.decomposed_vcf is None:
-                logging.error("For cactus and pggb graphs, the decomposed VCF is required")
+                logging.error("For cactus and pggb graphs, the vg decomposed VCF is required")
                 exit(-1)
 
     options.img_output_path = os.path.join(options.output_path, "tmp_imgs")
@@ -121,8 +121,10 @@ def check_arguments(options):
 
     options.kmer_size = 30
 
-    # options.model_path = "src/pack_model/LSTM-l1-fc64-bi.pth"
     options.model_path = pkg_resources.resource_filename('src', 'pack_model/LSTM-l1-fc64-bi.pth')
+
+    if not os.path.exists(options.model_path):
+        options.model_path = "src/pack_model/LSTM-l1-fc64-bi.pth"
 
     options.model_device = "cpu"
     options.model_cpu = 8

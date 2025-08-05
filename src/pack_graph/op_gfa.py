@@ -226,23 +226,23 @@ class GFA:
 
 def load_pangraph(options):
 
-    gfa_minigraph = GFA()
+    gfa_obj = GFA()
 
     if options.remove_small:
-        gfa_minigraph.parse_gfa_file_small_nodes(options.gfa_path, options.min_sv_size)
-    # gfa_minigraph.parse_gfa_file(options.gfa_path)
+        gfa_obj.parse_gfa_file_small_nodes(options.gfa_path, options.min_sv_size)
+    # gfa_obj.parse_gfa_file(options.gfa_path)
 
     if options.gfa_source in ["cactus", "pggb"]:
-        retrieve_snarl_from_vg_decomposed(gfa_minigraph, options)
+        retrieve_snarl_from_vg_decomposed(gfa_obj, options)
 
     elif options.gfa_source in ["minigraph"]:
         for i in range(len(options.asm_paths)):
 
             if options.output_mode == "population":
-               retrieve_snarl_from_minigraph_call_population(options.asm_names[i], options.asm_paths[i], gfa_minigraph, options)
+               retrieve_snarl_from_minigraph_call_population(options.asm_names[i], options.asm_paths[i], gfa_obj, options)
 
             elif options.output_mode == "single":
-                retrieve_snarl_from_minigraph_call_single(options.asm_names[i], options.asm_paths[i], gfa_minigraph, options)
+                retrieve_snarl_from_minigraph_call_single(options.asm_names[i], options.asm_paths[i], gfa_obj, options)
 
             else:
                 logging.error("No this output mode {}".format(options.output_mode))
@@ -252,106 +252,20 @@ def load_pangraph(options):
         logging.error("No this GFA source {}".format(options.gfa_source))
         exit()
 
-    # gfa_minigraph.parse_gfa_file(options.spec_snarls)
-    gfa_minigraph.set_gfa2fa_path(gfatools_gfa2fa(options))
+    # gfa_obj.parse_gfa_file(options.spec_snarls)
+    gfa_obj.set_gfa2fa_path(gfatools_gfa2fa(options))
 
-    # resolve_large_snarl_info_sub_snarls(gfa_minigraph, options)
+    # resolve_large_snarl_info_sub_snarls(gfa_obj, options)
     #
     # simplify_gfa(options.gfa_path)
     #
-    # for snarl_id in gfa_minigraph.snarls:
-    #     gfa_minigraph.snarls[snarl_id].path_list = list(gfa_minigraph.snarls[snarl_id].path_asm_dict.keys())
-    #     gfa_minigraph.snarls[snarl_id].subpath_list = []
+    # for snarl_id in gfa_obj.snarls:
+    #     gfa_obj.snarls[snarl_id].path_list = list(gfa_obj.snarls[snarl_id].path_asm_dict.keys())
+    #     gfa_obj.snarls[snarl_id].subpath_list = []
 
-    gfa_minigraph.release_memo()
+    gfa_obj.release_memo()
 
-    return gfa_minigraph
-
-
-def minigraph_add(options):
-
-    gfa_minigraph = GFA()
-
-    # # STEP: run graph increment
-    # added_gfa_path = os.path.join(options.output_path, "pg.minigraph.add.gfa")
-    #
-    # logging.info("Preprocessing: Generate the incremental graph to {}".format(added_gfa_path))
-    #
-    # if not os.path.exists(added_gfa_path):
-    #     cmd_str = "{} -t {} -cxggs {} {} > {} \n".format(options.minigraph, options.thread_num, options.gfa_path, " ".join(options.asm_paths), added_gfa_path)
-    #     os.system(cmd_str)
-    #
-    # options.gfa_path = added_gfa_path
-
-    # # STEP: minigraph call
-    for i in range(len(options.asm_paths)):
-
-        asm_call_path = os.path.join(options.output_path, "{}.vcf".format(options.asm_names[i]))     # # then search the output path
-
-        if not os.path.exists(asm_call_path):
-            logging.info("Preprocessing: Generate asm VCF file from {}".format(options.asm_paths[i]))
-
-            # cmd_str = "{} -t {} -xasm --call {} {} > {}".format(options.minigraph, options.thread_num, added_gfa_path, options.asm_paths[i], asm_call_path)
-            cmd_str = "{} -t {} -xasm --call {} {} > {}".format(options.minigraph, options.thread_num, options.gfa_path, options.asm_paths[i], asm_call_path)
-
-            os.system(cmd_str)
-
-        retrieve_snarl_from_minigraph_call_population(options.asm_names[i], options.asm_paths[i], gfa_minigraph, options)
-
-    gfa_minigraph.set_gfa2fa_path(gfatools_gfa2fa(options))
-
-    existing_snarl_records = retrieve_snarl_from_seqwave_call(options.vcf_path)
-
-    return gfa_minigraph, existing_snarl_records
-
-
-def minigraph_merge(options, raw_snarls, shared_snarl_records):
-
-    # # load the unique_snarl_records
-    unique_snarl_records = retrieve_snarl_from_seqwave_call(os.path.join(options.output_path, "seqwave.hap_level.split.vcf"), reset_population=True)
-
-    merged_snarl_records = unique_snarl_records
-
-    # # merge shared records into the all records
-    for snarl_id in shared_snarl_records:
-        snarl = shared_snarl_records[snarl_id]
-
-        if snarl_id not in merged_snarl_records:
-            merged_snarl_records[snarl_id] = {}
-
-        for path in snarl:
-            path_record = snarl[path]
-
-            merged_snarl_records[snarl_id][path] = path_record
-
-    # # output
-    from src.pack_sv.op_sv import interpret_add_to_variant
-    interpret_add_to_variant(raw_snarls, merged_snarl_records, options)
-
-    # # # for these unique snarls that without a called record, mark they are reference
-    # for snarl_id in unique_snarls:
-    #
-    #     snarl = unique_snarls[snarl_id]
-    #
-    #     if snarl_id not in unique_snarl_records:
-    #         unique_snarl_records[snarl_id] = {}
-    #
-    #     for alt_path in snarl.path_asm_dict:
-    #         if alt_path not in unique_snarl_records[snarl_id]:
-    #             unique_snarl_records[snarl_id][alt_path] = "reference"
-
-    # # # merge the unique records into existing records
-    # for snarl_id in unique_snarl_records:
-    #
-    #     snarl = unique_snarl_records[snarl_id]
-    #
-    #     if snarl_id not in existing_snarl_records:
-    #         existing_snarl_records[snarl_id] = {}
-    #
-    #     # # all the path in unique_snarl_records are new
-    #     for alt_path in snarl:
-    #         alt_path_record = snarl[alt_path]
-    #         existing_snarl_records[snarl_id][alt_path] = alt_path_record
+    return gfa_obj
 
 
 def gfatools_gfa2fa(options):
