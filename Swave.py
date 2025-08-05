@@ -23,7 +23,7 @@ def parse_arguments(arguments=sys.argv[1:]):
     parser_call.add_argument('--ref_path', dest="ref_path", type=os.path.abspath, required=True, help='Absolute path to reference')
     parser_call.add_argument('--gfa_path', dest="gfa_path", type=os.path.abspath, required=True, help='Absolute path to gfa')
 
-    parser_call.add_argument('--gfa_source', dest="gfa_source", choices=['minigraph', 'cactus', 'pggb'], default='minigraph', help='The source of GFA. Choose from [minigraph, cactus, pggb].')
+    parser_call.add_argument('--gfa_source', dest="gfa_source", choices=['minigraph', 'cactus', 'pggb'], required=True, help='The source of GFA. Choose from [minigraph, cactus, pggb].')
     parser_call.add_argument('--decomposed_vcf', dest="decomposed_vcf", type=os.path.abspath, required=False, default=None, help='The decomposed VCF from vg (could be processed by vcfbub and vcfwave), required for cactus and pggb graphs')
 
     parser_call.add_argument('--output_mode', dest="output_mode", choices=['auto', 'population', 'single'], default='auto', help='Mode of output. Choose from [auto, population, single]')
