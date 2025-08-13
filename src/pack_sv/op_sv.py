@@ -2,13 +2,14 @@ import os
 import numpy as np
 from src.pack_sv.op_vcf import output_vcf_header, generate_sample_level_vcf, output_vcf_records
 from src.pack_model.model import index2label, label2index
-from multiprocessing import Pool
+import multiprocessing
 import pysam
 import logging
 import sys
 import traceback
 from src.pack_graph.op_seq import calculate_seq_similarity, calculate_seq_repeat_ratio, find_continuous_val
 import re
+from src.logs import setup_logger
 
 
 class SSV:
@@ -1132,7 +1133,9 @@ def generate_vcf_records(interpret_res_dict, snarls, options):
 
 
 def interpret_prediction_to_variant_parallel(gfa_obj, parallel_bin_num, options):
-    parallel_pool = Pool(options.thread_num)
+
+    multiprocessing_spawn = multiprocessing.get_context("spawn")
+    parallel_pool = multiprocessing_spawn.Pool(options.thread_num, initializer=setup_logger, initargs=(options.output_path,))
     parallel_pool_res = []
 
     snarls = gfa_obj.snarls

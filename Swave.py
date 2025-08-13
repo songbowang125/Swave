@@ -7,6 +7,7 @@ import sys
 import argparse
 from src.version import __version__
 import pkg_resources
+from src.logs import setup_logger
 
 
 def parse_arguments(arguments=sys.argv[1:]):
@@ -189,18 +190,7 @@ if __name__ == '__main__':
         check_arguments(options)
 
         # # STEP: create log file
-        log_format = logging.Formatter("%(asctime)s [%(levelname)s]    %(message)s")
-
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.INFO)
-
-        fileHandler = logging.FileHandler(os.path.join(options.output_path, "swave.log"), mode="w")
-        fileHandler.setFormatter(log_format)
-
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(log_format)
-        root_logger.addHandler(consoleHandler)
-        root_logger.addHandler(fileHandler)
+        setup_logger(options.output_path)
 
         logging.info("Command: {}".format(" ".join(sys.argv)))
 

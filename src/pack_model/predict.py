@@ -7,8 +7,10 @@ import random
 import multiprocessing
 from multiprocessing.pool import Pool
 import logging
+
 import traceback
 import sys
+from src.logs import setup_logger
 
 
 class NoDaemonProcess(multiprocessing.Process):
@@ -42,7 +44,8 @@ def predict_one_bin(bin_index, bin_files, device, options):
 
         predict_dataset = Signal_DataSet(bin_files, data_type="predict")
 
-        predict_loader = data.DataLoader(predict_dataset, batch_size=batch_size, shuffle=False, collate_fn=Signal_DataCollection, num_workers=2, pin_memory=True)
+        # predict_loader = data.DataLoader(predict_dataset, batch_size=batch_size, shuffle=False, collate_fn=Signal_DataCollection, num_workers=2, pin_memory=True)
+        predict_loader = data.DataLoader(predict_dataset, batch_size=batch_size, shuffle=False, collate_fn=Signal_DataCollection, pin_memory=True)
 
         model = DecoderLSTM(n_input=predict_dataset.data_dim, n_hidden=model_fc, n_layer=model_layer, architecture=model_architecture, bidirect=model_bidirect).to(device)
         model.load_state_dict(torch.load(options.model_path, map_location=torch.device(device)))
@@ -74,6 +77,7 @@ def predict_one_bin(bin_index, bin_files, device, options):
 
 
 def predict_projection_matrix_parallel(parallel_bin_num, options):
+    multiprocessing_spawn = multiprocessing.get_context("spawn")
 
     # # STEP: distribute all the saved npz
     all_npz_files = []
@@ -108,7 +112,8 @@ def predict_projection_matrix_parallel(parallel_bin_num, options):
         # for bin_index in range(parallel_bin_num):
         #     predict_one_bin(bin_index, device, options)
 
-        parallel_pool = NoDaemonPool(max(1, int(options.thread_num / options.model_cpu)))
+        # parallel_pool = NoDaemonPool(max(1, int(options.thread_num / options.model_cpu)))
+        parallel_pool = multiprocessing_spawn.Pool(max(1, int(options.thread_num / options.model_cpu)), initializer=setup_logger, initargs=(options.output_path,))
         parallel_pool_res = []
 
         for bin_index in range(parallel_bin_num):
