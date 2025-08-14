@@ -12,7 +12,7 @@ from src.logs import setup_logger
 
 def parse_arguments(arguments=sys.argv[1:]):
 
-    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description="Swave")
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description="Swave version {}".format(__version__))
 
     subparsers = parser.add_subparsers(title='modules', dest='command', required=True)
 
