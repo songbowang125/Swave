@@ -38,22 +38,13 @@ conda env create -f ./environment.yml
 ## Activate the environment
 conda activate Swave-env
 
-## Install from source (optional)
-python setup.py install
-
-Note: Please make sure you have installed the same version of dependencies as in ./environment.yml. 
-      We recommand that you create a new conda env and install by the command lines above. 
 ```
 
 
 ### Run test
-If you have executed 'python setup.py install', you can directly type:
-```commandline
-Swave.py -h
-```
 
 
-If no, you need to enter the source code folder and type 'python Swave.py':
+You need to enter the source code folder and type 'python Swave.py':
 ```commandline
 cd Swave
 python Swave.py -h
@@ -70,7 +61,7 @@ The demo data contains a pangenome graph built on T2T reference and three sample
 
 2. Run the following command:
 ```commandline
-Swave.py call --input_path assemblies-trio-hg00514.tsv  --ref_path t2t.chr20.fa --output_path ./ --gfa_path pg.minigraph.gfa
+python Swave.py call --input_path assemblies-trio-hg00514.tsv  --ref_path t2t.chr20.fa --output_path ./ --gfa_path pg.minigraph.gfa --gfa_source minigraph
 ```
 
 3. Check output file:
@@ -137,7 +128,7 @@ However, Swave executes them one-by-one. To save time, it is recommended to run 
   ```
 2.2 Run:
   ```commandline
-    Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source minigraph --gfa_path pangenome.gfa --output_path ./
+    python Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source minigraph --gfa_path pangenome.gfa --output_path ./
   ```
 2.3 Check outputs:
 ```commandline
@@ -166,7 +157,7 @@ If you need to generate it by your self, run 'vg deconstruct -e -a pangenome.gfa
 
 2.1 Run:
   ```commandline
-    Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source cactus (or pggb) --gfa_path pangenome.gfa.gz --decomposed_vcf pangenome.raw.vcf.gz --output_path ./
+    python Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source cactus (or pggb) --gfa_path pangenome.gfa.gz --decomposed_vcf pangenome.raw.vcf.gz --output_path ./
   ```
 2.2 Check outputs:
 ```commandline
