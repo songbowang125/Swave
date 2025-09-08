@@ -167,5 +167,19 @@ If you need to generate it by your self, run 'vg deconstruct -e -a pangenome.gfa
     swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
 ```
 
+3.3 Output filter:
+ 
+Swave offers a three-level confidence tags in the outputted VCF file (column QUAL), including HighQual (renamed to PASS to fulfill the VCF format), MediumQual and LowQual.
+
+The quality reflects the ratio between two lengths:
+
+(1) length difference between reference and alternative sequence, while
+
+(2) length difference between reference and predicted-SV-caused sequence.
+
+If the predicted SV is true-positive, this ratio should be 0. In the contrast, if the SV is less-accurate or false-positive, this ratio would increase and be larger than 0.
+
+SVs with 'LowQual' are recommended to be filtered out for downstream analysis.   
+
 ## Contact
 If you have any questions, please feel free to contact: songbowang125@163.com
