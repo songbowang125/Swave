@@ -150,9 +150,14 @@ Swave uses the pangenome.raw.vcf.gz to extract allele information, and doesn't n
 
 The pangenome.raw.vcf.gz file is an automated output part of the minigraph-cactus and pggb pipeline.
 
-If you need to generate it by your self, run 'vg deconstruct -e -a pangenome.gfa.gz | bgzip > pangenome.raw.vcf.gz && tabix pangenome.raw.vcf.gz'
+If you need to generate it by your self, run:
+  ```commandline
+  Single chromosome: 
+    vg deconstruct -e -a -p chr1 pangenome.gfa.gz | bgzip > pangenome.raw.vcf.gz && tabix pangenome.raw.vcf.gz
+  Multiple chromosome:
+    vg deconstruct -e -a -P chr pangenome.gfa.gz | bgzip > pangenome.raw.vcf.gz && tabix pangenome.raw.vcf.gz
 
-
+  ```
 ### 2. Run Swave
 
 2.1 Run:
@@ -167,7 +172,7 @@ If you need to generate it by your self, run 'vg deconstruct -e -a pangenome.gfa
     swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
 ```
 
-3.3 Output filter:
+2.3 Output filter:
  
 Swave offers a three-level confidence tags in the outputted VCF file (column QUAL), including HighQual (renamed to PASS to fulfill the VCF format), MediumQual and LowQual.
 
@@ -181,5 +186,12 @@ If the predicted SV is true-positive, this ratio should be 0. In the contrast, i
 
 SVs with 'LowQual' are recommended to be filtered out for downstream analysis.   
 
+### 3. Recommended Settings
+(1) It is best not to use ':' in the  chromosome names. Swave could pass this, but this would cause problems with the VCF or 'minigraph call' BED formats.
+
+(2) If you are benchmarking with HG002 Tier1 callset (HG002_SVs_Tier1_v0.6.vcf), please add parameter '--dup_to_ins' 
+
+
+
 ## Contact
-If you have any questions, please feel free to contact: songbowang125@163.com
+If you have any questions, please feel free to contact: songbowang125@163.com or songbowang125@xjtu.edu.cn

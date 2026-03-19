@@ -980,7 +980,8 @@ def output_at_top_and_sub_snarl_level(vcf_records, vcf_records_split, top_snarl_
         #     if alt_path_csv.score != "LowQual":
         #         alt_path_csv.score = "MediumQual"
 
-        alt_path_csv_bkps = ["{}_{}_{}_{}_{}_{}_{}_{}".format(ssv.type, ssv.length, ssv.source_chr, ssv.source_start, ssv.source_end, ssv.insert_chr, ssv.insert_start, ssv.insert_end) if ssv.type in ["DUP", "invDUP"] else "{}_{}_{}_{}_{}".format(ssv.type, ssv.length, ssv.chr, ssv.start, ssv.end) for ssv in alt_path_csv.ssv_components]
+        # # v1.3 add .replace(":", "-").replace("_", "-") to chrom to avoiding ":" in VCF format column
+        alt_path_csv_bkps = ["{}_{}_{}_{}_{}_{}_{}_{}".format(ssv.type, ssv.length, ssv.source_chr.replace(":", "-").replace("_", "-"), ssv.source_start, ssv.source_end, ssv.insert_chr.replace(":", "-").replace("_", "-"), ssv.insert_start, ssv.insert_end) if ssv.type in ["DUP", "invDUP"] else "{}_{}_{}_{}_{}".format(ssv.type, ssv.length, ssv.chr.replace(":", "-").replace("_", "-"), ssv.start, ssv.end) for ssv in alt_path_csv.ssv_components]
 
         for asm_name in alt_path_include_asm_names:
             top_snarl_gt_list[options.alt_asm_names.index(asm_name)] = "{}:{}:{}:{}".format(alt_path_cnt, alt_path_csv_type, alt_path_csv_length, ",".join(alt_path_csv_bkps))
@@ -1185,7 +1186,7 @@ def interpret_prediction_to_variant_parallel(gfa_obj, parallel_bin_num, options)
     logging.info("Outputing into final VCFs")
 
     # # output to population vcf file
-    hap_level_vcf_path = os.path.join(options.output_path, "tmp.swave.hap_level.vcf")
+    hap_level_vcf_path = os.path.join(options.output_path, "swave.hap_level.vcf")
     hap_level_vcf_path_fout = open(hap_level_vcf_path, "w")
 
     vcf_records = []
@@ -1201,7 +1202,7 @@ def interpret_prediction_to_variant_parallel(gfa_obj, parallel_bin_num, options)
     hap_level_vcf_path_fout.close()
 
     # # output to split/single vcf file
-    hap_level_split_vcf_path = os.path.join(options.output_path, "tmp.swave.hap_level.split.vcf")
+    hap_level_split_vcf_path = os.path.join(options.output_path, "swave.hap_level.split.vcf")
     hap_level_split_vcf_path_fout = open(hap_level_split_vcf_path, "w")
 
     vcf_records_split = []

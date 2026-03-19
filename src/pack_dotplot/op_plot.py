@@ -304,8 +304,9 @@ def generate_one_snarl(top_snarl_id, snarl, node_seq_dict, snarl_cnt, total_snar
                     except KeyError:
                         return "finish"
 
-                if "N" in sub_ref_path_seq:
-                    return "finish"
+                # # remove fromv1.3
+                # if "N" in sub_ref_path_seq:
+                #     return "finish"
                 # print(len(sub_ref_path_seq), len(sub_alt_path_seq))
 
                 # print("sub_snarl_id", top_snarl_id, snarl.snarl_id, sub_snarl_id, snarl.ref_chrom, snarl.ref_start, snarl.ref_end)

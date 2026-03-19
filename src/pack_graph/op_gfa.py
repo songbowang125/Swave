@@ -238,11 +238,11 @@ def load_pangraph(options):
     elif options.gfa_source in ["minigraph"]:
         for i in range(len(options.asm_paths)):
 
-            if options.output_mode == "population":
+            if options.output_mode == "population" or options.output_mode == "single":
                retrieve_snarl_from_minigraph_call_population(options.asm_names[i], options.asm_paths[i], gfa_obj, options)
-
-            elif options.output_mode == "single":
-                retrieve_snarl_from_minigraph_call_single(options.asm_names[i], options.asm_paths[i], gfa_obj, options)
+            # # removed from v1.3
+            # elif options.output_mode == "single":
+            #     retrieve_snarl_from_minigraph_call_single(options.asm_names[i], options.asm_paths[i], gfa_obj, options)
 
             else:
                 logging.error("No this output mode {}".format(options.output_mode))
