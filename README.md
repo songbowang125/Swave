@@ -98,6 +98,8 @@ One log file and two result files are generated, including:
   You can find a demo tsv file in ["Demo tsv link"](https://drive.google.com/file/d/1QgRsWIsFQvLNIgaqXst9LK-cQjROjIgP/view?usp=drive_link).
 
   Each row in the TSV file represents a sample, with the first column indicating the sample name and the remaining columns listing paths to the haplotype FASTA files.
+
+  **!!!! Use absolute path for each fasta file !!!!**
   ```commandline
     assemblies.tsv: 
         sample1    /path/to/sample1_hap1.fasta    /path/to/sample1_hap2.fasta    /path/to/sample1_hap3.fasta

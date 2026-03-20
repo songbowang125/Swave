@@ -813,8 +813,7 @@ def interpret_one_bin(bin_index, snarls, options):
         interpret_res_dict = {}
 
         for matrix_id in predict_res_dict:
-            matrix_id_split = matrix_id.split(".")
-
+            matrix_id_split = matrix_id.split("+++")
             top_snarl_id, sub_ref_start, sub_ref_end, sub_dotplot_ref_chr, sub_dotplot_ref_start, sub_dotplot_ref_end, sub_ref_path, sub_alt_path, dotplot_type, dotplot_stride_size \
                 = matrix_id_split[0], int(matrix_id_split[1]), int(matrix_id_split[2]), matrix_id_split[3], int(matrix_id_split[4]), int(matrix_id_split[5]), matrix_id_split[6], matrix_id_split[7], matrix_id_split[8], int(matrix_id_split[9])
 
@@ -1150,7 +1149,7 @@ def interpret_prediction_to_variant_parallel(gfa_obj, parallel_bin_num, options)
 
         bin_snarls = {}
         for matrix_id in predict_res_dict:
-            matrix_id_split = matrix_id.split(".")
+            matrix_id_split = matrix_id.split("+++")
             top_snarl_id = matrix_id_split[0]
 
             bin_snarls[top_snarl_id] = snarls[top_snarl_id]

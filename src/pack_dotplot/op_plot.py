@@ -356,7 +356,7 @@ def generate_one_snarl(top_snarl_id, snarl, node_seq_dict, snarl_cnt, total_snar
                 sub_dotplot_ref_start, sub_dotplot_ref_end = sub_ref_start - len(sub_start_node_seq), sub_ref_end + len(sub_end_node_seq)
                 sub_dotplot_stride_size = calculate_stride_size(sub_ref_path_seq, sub_alt_path_seq)
 
-                sub_dotplot_id = "{}.{}.{}.{}.{}.{}.{}.{}".format(top_snarl_id, sub_ref_start, sub_ref_end, sub_ref_chrom, sub_dotplot_ref_start, sub_dotplot_ref_end, sub_ref_path, sub_alt_path)
+                sub_dotplot_id = "{}+++{}+++{}+++{}+++{}+++{}+++{}+++{}".format(top_snarl_id, sub_ref_start, sub_ref_end, sub_ref_chrom, sub_dotplot_ref_start, sub_dotplot_ref_end, sub_ref_path, sub_alt_path)
                 sub_dotplot_output_prefix = os.path.join(options.img_output_path, sub_dotplot_id)
 
                 # # the following codes are for generate dotplot from gepard
@@ -372,7 +372,7 @@ def generate_one_snarl(top_snarl_id, snarl, node_seq_dict, snarl_cnt, total_snar
 
                 if not (dotplot_projection_dict['ref2alt'] == "Bad" and dotplot_projection_dict['alt2ref'] == "Bad"):
                     for dotplot_type in dotplot_projection_dict:
-                        snarl_dotplot_dict[sub_dotplot_id + ".{}.{}".format(dotplot_type, sub_dotplot_stride_size)] = dotplot_projection_dict[dotplot_type]
+                        snarl_dotplot_dict[sub_dotplot_id + "+++{}+++{}".format(dotplot_type, sub_dotplot_stride_size)] = dotplot_projection_dict[dotplot_type]
                 else:
                     bad_cnt += 1
 
