@@ -15,7 +15,8 @@ For more information, please contact with Songbo Wang (songbowang125@163.com) or
 - [Usage_1 (Demo data)](#usage_1-demo-data)
 - [Usage_2 (User data for minigraph)](#usage_2-user-data-for-minigraph)
 - [Usage_3 (User data for minigraph-cactus and pggb)](#usage_3-user-data-for-minigraph-cactus-and-pggb)
-
+- [Output of Swave](#output-of-swave)
+- [Recommended Settings](#Recommended-Settings)
 
 ## Installation
 
@@ -116,7 +117,7 @@ For each fasta file (including the reference file), run:
     ...
   ```
 
-Swave will automatically run the above commands if the bed files are not found in the pangenome.gfa folder.
+**!!!!Swave will automatically run the above commands if the bed files are not found in the pangenome.gfa folder.  !!!!**
 
 However, Swave executes them one-by-one. To save time, it is recommended to run them in parallel manually.
 
@@ -174,7 +175,18 @@ If you need to generate it by your self, run:
     swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
 ```
 
-2.3 Output filter:
+## Output of Swave
+### 1.Output files:
+
+One log file and two result files are generated, including:
+
+    swave.log
+    swave.sample_level.vcf (Multi-allelic outputs)
+    swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
+
+The swave.sample_level.split.vcf follows standard VCF format and can be applied for downstream analysis.
+
+### 2. Output filter:
  
 Swave offers a three-level confidence tags in the outputted VCF file (column QUAL), including HighQual (renamed to PASS to fulfill the VCF format), MediumQual and LowQual.
 
@@ -188,12 +200,19 @@ If the predicted SV is true-positive, this ratio should be 0. In the contrast, i
 
 SVs with 'LowQual' are recommended to be filtered out for downstream analysis.   
 
-### 3. Recommended Settings
+### 3. Get REF and ALT sequence
+Both the vcf files contain graph paths in the REF and ALT column, you can convert them to sequence with:
+
+    python Swave.py convert_seq --vcf_path {} --gfa_path {} --ref_path {}
+
+## Recommended Settings
 (1) It is best not to use ':' in the  chromosome names. Swave could pass this, but this would cause problems with the VCF or 'minigraph call' BED formats.
 
 (2) If you are benchmarking with HG002 Tier1 callset (HG002_SVs_Tier1_v0.6.vcf), please add parameter '--dup_to_ins' 
 
+(3) For minigraph pangenome, you can move all the 'minigraph --call' BED files to the folder where the .gfa locates. This will save much running time when you re-run Swave.
 
+(4) If you re-run Swave in a previous output folder, please remove all the 'tmp*' files and 'tmp*' folders.
 
 ## Contact
 If you have any questions, please feel free to contact: songbowang125@163.com or songbowang125@xjtu.edu.cn
