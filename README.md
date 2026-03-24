@@ -38,9 +38,19 @@ conda env create -f ./environment.yml
 
 ## Activate the environment
 conda activate Swave-env
+```
+### Additional requirements
+For minigraph pangenome graph (**preferred**), ["minigraph"](https://github.com/lh3/minigraph) and ["gfatools"](https://github.com/lh3/gfatools) is requred. 
 
 ```
-
+Configured them in your system, 
+or specify --minigraph and --gfatools for the absolute path of them when running Swave 
+```
+For MC/PGGB pangenome graph, ["MC"](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/pangenome.md) or ["pggb"](https://github.com/pangenome/pggb), and ["gfatools"](https://github.com/lh3/gfatools) is requred.   
+```
+Configured them in your system, 
+or specify --gfatools for the absolute path of them when running Swave
+```
 
 ### Run test
 
