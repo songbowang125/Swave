@@ -472,4 +472,4 @@ def generate_projection_matrix_for_snarls_parallel(gfa, options):
         res = res.get()
 
         if res != "finish":
-            logging.error("Skip generating for snarl {}. {}".format(res[0], res[1]))
+            logging.warning("Skip generating for snarl {}. {}".format(res[0], res[1]))

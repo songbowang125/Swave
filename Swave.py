@@ -44,8 +44,9 @@ def parse_arguments(arguments=sys.argv[1:]):
 
     parser_call.add_argument('--thread_num', dest="thread_num", type=int, default=1, help='Thread numbers (default: %(default)s)')
 
-    parser_call.add_argument("--minigraph", dest="minigraph", type=str, default="minigraph", help='Path to executable minigraph path')
-    parser_call.add_argument("--gfatools", dest="gfatools", type=str, default="gfatools", help='Path to executable gfatools path')
+    # # no longer automated run minigraph and gfatools from v1.5
+    # parser_call.add_argument("--minigraph", dest="minigraph", type=str, default="minigraph", help='Path to executable minigraph path')
+    # parser_call.add_argument("--gfatools", dest="gfatools", type=str, default="gfatools", help='Path to executable gfatools path')
 
     parser_convert = subparsers.add_parser('convert_seq', help='Convert the graph paths to sequence in the REF and ALT columns of VCF')
     parser_convert.add_argument('--vcf_path', dest="vcf_path", type=os.path.abspath, required=True, help='Absolute path to vcf')

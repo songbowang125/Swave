@@ -287,10 +287,13 @@ def retrieve_snarl_from_minigraph_call_population(spec_asm_name, spec_asm_path, 
         spec_asm_vcf_path = spec_asm_vcf_path_2
 
     else:
+        logging.error("Not find 'Minigrah --call' BED for {}".format(spec_asm_name))
+        logging.error("Please run: /path/to/minigraph -t {} -xasm --call {} {} > {}".format(options.thread_num, options.gfa_path, spec_asm_path, spec_asm_vcf_path_2))
+        exit(-1)
 
-        logging.info("Preprocessing: Generate allele info from {}".format(spec_asm_vcf_path_2))
-
-        os.system("{} -t {} -xasm --call {} {} > {}".format(options.minigraph, options.thread_num, options.gfa_path, spec_asm_path, spec_asm_vcf_path_2))
+        # # no longer run minigrah call automatedly from v1.5
+        # logging.info("Preprocessing: Generate allele info from {}".format(spec_asm_vcf_path_2))
+        # os.system("{} -t {} -xasm --call {} {} > {}".format(options.minigraph, options.thread_num, options.gfa_path, spec_asm_path, spec_asm_vcf_path_2))
 
         spec_asm_vcf_path = spec_asm_vcf_path_2
 

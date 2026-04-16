@@ -284,10 +284,15 @@ def gfatools_gfa2fa(options):
         return gfa2fa_path_2
 
     else:
-        logging.info("Preprocessing: Generate gfa2fa file from {}".format(gfa2fa_path_2))
+        logging.error("Not find 'gfatools gfa2fa' Fasta for {}".format(options.gfa_path))
+        logging.error("Please run: /path/to/gfatools gfa2fa {} > {}".format(options.gfa_path, gfa2fa_path_2))
+        exit(-1)
 
-        cmd_str = "{} gfa2fa {} >{}".format(options.gfatools, options.gfa_path, gfa2fa_path_2)
-        os.system(cmd_str)
-
-        return gfa2fa_path_2
+        # # no longer run gfatools automatedly from v1.5
+        # logging.info("Preprocessing: Generate gfa2fa file from {}".format(gfa2fa_path_2))
+        #
+        # cmd_str = "{} gfa2fa {} >{}".format(options.gfatools, options.gfa_path, gfa2fa_path_2)
+        # os.system(cmd_str)
+        #
+        # return gfa2fa_path_2
 

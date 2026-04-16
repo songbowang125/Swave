@@ -1,5 +1,5 @@
 ## Swave
-Swave detects structural variants (SVs) and complex SVs from a pangenome graph constructed on one or multiple genome assemblies.  
+Swave detects structural variants (SVs) and complex SVs from a pangenome graph constructed on one or multiple genome assemblies. Swave also supports SNP/Indel calling from 'minigraph' pangenome.  
 
 <div align=left><img width=80% height=80% src="https://github.com/songbowang125/Swave/blob/main/workflow.svg"/></div> 
 
@@ -15,6 +15,8 @@ For more information, please contact with Songbo Wang (songbowang125@163.com) or
 - [Usage_1 (Demo data)](#usage_1-demo-data)
 - [Usage_2 (User data for minigraph)](#usage_2-user-data-for-minigraph)
 - [Usage_3 (User data for minigraph-cactus and pggb)](#usage_3-user-data-for-minigraph-cactus-and-pggb)
+- [Usage_4 (SNP and indel calling)](#usage_4-snp-and-indel-calling)
+- [Usage_5 (Genotyping short-reads)](#usage_5-genotyping-short-reads)
 - [Output of Swave](#output-of-swave)
 - [Recommended Settings](#Recommended-Settings)
 
@@ -42,15 +44,9 @@ conda activate Swave-env
 ### Additional requirements
 For minigraph pangenome graph (**preferred**), ["minigraph"](https://github.com/lh3/minigraph) and ["gfatools"](https://github.com/lh3/gfatools) is requred. 
 
-```
-Configured them in your system, 
-or specify --minigraph and --gfatools for the absolute path of them when running Swave 
-```
+
 For MC/PGGB pangenome graph, ["MC"](https://github.com/ComparativeGenomicsToolkit/cactus/blob/master/doc/pangenome.md) or ["pggb"](https://github.com/pangenome/pggb), and ["gfatools"](https://github.com/lh3/gfatools) is requred.   
-```
-Configured them in your system, 
-or specify --gfatools for the absolute path of them when running Swave
-```
+
 
 ### Run test
 
@@ -94,14 +90,17 @@ One log file and two result files are generated, including:
     referece.fasta
     sample1_hap1.fasta
     sample1_hap2.fasta
-    sample1_hap3.fasta
     ...
     sampleN_hapN.fasta
   ```
 
 1.2 If you don't have the pangenome gfa, you can construct one with ["Minigraph"](https://github.com/lh3/minigraph):
   ```commandline
+    # # construct
     minigraph -t thread_num -cxggs referece.fasta sample1_hap1.fasta ... sampleN_hapN.fasta > pangenome.gfa
+    
+    # # convert to fasta format (Output format for gfatools: add a suffix .gfa2fa.fa to .gfa. Format cannot be changed)
+    gfatools gfa2fa pangenome.gfa > pangenome.gfa.gfa2fa.fa 
   ```
 
 1.3 And then, using a tab-separated assemblies.tsv file to store all the sample files. 
@@ -127,17 +126,18 @@ For each fasta file (including the reference file), run:
     ...
   ```
 
-**!!!!Swave will automatically run the above commands if the bed files are not found in the pangenome.gfa folder.  !!!!**
+**!!!! The output BED files must be named by adding a .bed suffix to the Fasta name. !!!!**
 
-However, Swave executes them one-by-one. To save time, it is recommended to run them in parallel manually.
+**!!!! For example: referece.fasta -> referece.fasta.bed;    sample1_hap1.fasta -> sample1_hap1.fasta.bed !!!!**
+
+**!!!! To save time, it is recommended to run minigraph --call in parallel. !!!!**
 
 ### 2. Run Swave
 2.1 Check two things:
   ```commandline
     The bed outputs must be named by appending a .bed suffix to the corresponding FASTA filenames. 
-    (If you followed the above steps, either manually or automatically, you can ignore this note.) 
   
-    All BED files should be placed in the same directory as pangenome.gfa.
+    All BED files should be placed in the same directory as pangenome.gfa or in the output folder.
   ```
 2.2 Run:
   ```commandline
@@ -159,6 +159,12 @@ However, Swave executes them one-by-one. To save time, it is recommended to run 
     
     pangenome.raw.vcf.gz
   ```
+
+And then generate the fasta file for p
+```commandline
+  # # convert to fasta format (Output format for gfatools: add a suffix .gfa2fa.fa to gfa file. Format cannot be changed)
+  gfatools gfa2fa pangenome.gfa.gz > pangenome.gfa.gz.gfa2fa.fa 
+```
 Swave uses the pangenome.raw.vcf.gz to extract allele information, and doesn't need to run the 'minigraph --call' commands. 
 
 The pangenome.raw.vcf.gz file is an automated output part of the minigraph-cactus and pggb pipeline.
@@ -169,7 +175,6 @@ If you need to generate it by your self, run:
     vg deconstruct -e -a -p chr1 pangenome.gfa.gz | bgzip > pangenome.raw.vcf.gz && tabix pangenome.raw.vcf.gz
   Multiple chromosome:
     vg deconstruct -e -a -P chr pangenome.gfa.gz | bgzip > pangenome.raw.vcf.gz && tabix pangenome.raw.vcf.gz
-
   ```
 ### 2. Run Swave
 
@@ -183,6 +188,38 @@ If you need to generate it by your self, run:
     swave.log
     swave.sample_level.vcf (Multi-allelic outputs)
     swave.sample_level.split.vcf (Bi-allelic outputs by splitting the Multi-allelic outputs)
+```
+## Usage_4 (SNP and indel calling)
+Swave is designed for SV calling from pangenome. However, we have implemented a script (main_small_call.py) for SNP/Indel calling from minigraph pangenome.
+
+The script main_small_call.py requires ["minimap2"](https://github.com/lh3/minimap2) in your env, then run:
+
+```commandline
+Note: this SNP/Indel calling script is for minigraph pangenome only!
+
+python main_small_call.py --input_path assemblies.tsv  --ref_path referece.fasta --output_path ./ --minigraph_callbed_folder {folder to minigraph --call bed files} --minimap2_path /path/to/minimap2 --thread_num {}
+```
+
+We tested the results using ["HG002 benchmark set"](https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/analysis/NIST_HG002_DraftBenchmark_defrabbV0.020-20250117/) (Variants: CHM13v2.0_HG2-T2TQ100-V1.1_smvar.vcf.gz; High-confident-regions: CHM13v2.0_HG2-T2TQ100-V1.1_smvar.benchmark.bed).
+ And this script achieved F1-score of 0.977, comparable to PAV using assemblies (0.974).
+
+
+The MC/Pggb pangenome has already included base-level bubbles for SNP/Indels, so you can extract them as SNP/Indel.
+
+
+## Usage_5 (Genotyping short-reads)
+
+Using the pangenome-level output of Swave and Pangenie, you can genotyping other short-reads samples.
+
+```commandline
+ 1. Convert the allele paths to allele sequences in the VCF. Please use the *_level.vcf, not the *_level.split.vcf.
+    python Swave.py convert_seq --vcf_path swave.sample_level.vcf --gfa_path {} --ref_path referece.fasta --force_pangenie
+ 
+ 2. Pangenie index:
+    PanGenie-index -v swave.sample_level.converted.vcf -r referece.fasta -t threads -o index-prefix
+ 
+ 3. Pangenie genotyping. As Pangenie required, the read1 and read2 should be stored in one fastq file
+    PanGenie -f index-prefix -i short-reads.fastq -s sample_name -j threads -t threads -o output-prefix
 ```
 
 ## Output of Swave
