@@ -263,9 +263,9 @@ def rename_contig(raw_contig_name):
     return new_contig_name
 
 
-def generate_seq_for_candidate(ref_path, id, candidate_dict, output_path):
+def generate_seq_for_candidate(ref_path, id, candidate_var, output_path):
 
-    ref_cord = candidate_dict[id][ref_path]
+    ref_cord = candidate_var[ref_path]
 
     output_prefix = os.path.join(output_path, "tmp.{}+++{}+++{}+++{}".format(rename_contig(ref_cord[0]), ref_cord[1], ref_cord[2], id[1:]))
 
@@ -285,11 +285,11 @@ def generate_seq_for_candidate(ref_path, id, candidate_dict, output_path):
         else:
             fout.write("{}\n".format(reverse_complement_seq(fin.fetch(ref_cord[0], ref_cord[1], ref_cord[2]).upper())))
 
-    for alt_path in candidate_dict[id]:
+    for alt_path in candidate_var:
         if alt_path == ref_path:
             continue
 
-        alt_cord = candidate_dict[id][alt_path]
+        alt_cord = candidate_var[alt_path]
 
         alt_seq_length = alt_cord[2] - alt_cord[1]
         if alt_seq_length <= 0:
@@ -802,9 +802,10 @@ if __name__ == '__main__':
     process_pool = multiprocessing.Pool(thread_num)
     for candidate_dict in [samepath_candiate_dict, nonsnarl_candidate_dict, unmapped_candidate_dict]:
         for id in candidate_dict:
-            if ref_path not in candidate_dict[id]:
+            candidate_var = candidate_dict[id]
+            if ref_path not in candidate_var:
                 continue
-            process_pool.apply_async(generate_seq_for_candidate, (ref_path, id, candidate_dict, output_path))
+            process_pool.apply_async(generate_seq_for_candidate, (ref_path, id, candidate_var, output_path))
 
     process_pool.close()
     process_pool.join()
