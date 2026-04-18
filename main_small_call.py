@@ -3,7 +3,7 @@ import multiprocessing
 import os
 import shutil
 
-import numpy as np
+import random
 from intervaltree import IntervalTree
 import pysam
 import re
@@ -130,7 +130,7 @@ def search_snarl_same_path(ref_path, asm_path_list, bed_rows_dict):
 
 
 
-def search_non_snarl(ref_path, asm_path_list, bed_rows_dict):
+def search_non_snarl(ref_path, asm_path_list, bed_rows_dict, output_path, thread_num):
 
     nonsnarl_candidate_dict = {}
 
@@ -263,46 +263,77 @@ def rename_contig(raw_contig_name):
     return new_contig_name
 
 
-def generate_seq_for_candidate(ref_path, id, candidate_var, output_path):
+def generate_seq_for_candidate(ref_path, asm_path_list, candidate_index, output_path):
 
-    ref_cord = candidate_var[ref_path]
+    with open(os.path.join(output_path, "tmp.candidate.{}.txt".format(candidate_index))) as fin:
 
-    output_prefix = os.path.join(output_path, "tmp.{}+++{}+++{}+++{}".format(rename_contig(ref_cord[0]), ref_cord[1], ref_cord[2], id[1:]))
+        asm_fin_dict = {}
+        for asm_path in [ref_path] + asm_path_list:
+            asm_fin_dict[asm_path] = pysam.FastaFile(asm_path)
 
-    ref_seq_path = output_prefix + ".ref.fa"
-    alt_seq_path = output_prefix + ".alt.fa"
+        for line in fin:
+            line_split = line.strip().split("\t")
 
-    ref_seq_length = ref_cord[2] - ref_cord[1]
+            id, cord_infos = line_split[0], line_split[1: ]
 
-    if ref_seq_length <= 0:
-        return 0
+            candidate_var = {}
+            for cord_info in cord_infos:
+                asm_path, contig_name, contig_start, contig_end, contig_orient = cord_info.split("&&")[:]
+                candidate_var[asm_path] = [contig_name, int(contig_start), int(contig_end), contig_orient]
 
-    with pysam.FastaFile(ref_path) as fin, open(ref_seq_path, "w") as fout:
-        fout.write(">ref\n".format(os.path.basename(ref_path)))
+            if ref_path not in candidate_var:
+                continue
 
-        if ref_cord[3] == "+":
-            fout.write("{}\n".format(fin.fetch(ref_cord[0], ref_cord[1], ref_cord[2]).upper()))
-        else:
-            fout.write("{}\n".format(reverse_complement_seq(fin.fetch(ref_cord[0], ref_cord[1], ref_cord[2]).upper())))
+            ref_cord = candidate_var[ref_path]
 
-    for alt_path in candidate_var:
-        if alt_path == ref_path:
-            continue
+            output_prefix = os.path.join(output_path, "tmp.{}+++{}+++{}+++{}".format(rename_contig(ref_cord[0]), ref_cord[1], ref_cord[2], id[1:]))
 
-        alt_cord = candidate_var[alt_path]
+            ref_seq_path = output_prefix + ".ref.fa"
+            alt_seq_path = output_prefix + ".alt.fa"
 
-        alt_seq_length = alt_cord[2] - alt_cord[1]
-        if alt_seq_length <= 0:
-            continue
-        if alt_seq_length / ref_seq_length > 3:
-            continue
+            ref_seq_length = ref_cord[2] - ref_cord[1]
 
-        with pysam.FastaFile(alt_path) as fin, open(alt_seq_path, "a") as fout:
-            fout.write(">{}\n".format(os.path.basename(alt_path)))
-            if alt_cord[3] == "+":
-                fout.write("{}\n".format(fin.fetch(alt_cord[0], alt_cord[1], alt_cord[2]).upper()))
-            else:
-                fout.write("{}\n".format(reverse_complement_seq(fin.fetch(alt_cord[0], alt_cord[1], alt_cord[2]).upper())))
+            if ref_seq_length <= 0:
+                return 0
+
+            with open(ref_seq_path, "w") as fout:
+                fout.write(">ref\n".format(os.path.basename(ref_path)))
+
+                if ref_cord[3] == "+":
+                    fout.write("{}\n".format(asm_fin_dict[ref_path].fetch(ref_cord[0], ref_cord[1], ref_cord[2]).upper()))
+                else:
+                    fout.write("{}\n".format(reverse_complement_seq(asm_fin_dict[ref_path].fetch(ref_cord[0], ref_cord[1], ref_cord[2]).upper())))
+
+            wrote_alt_seq_cnt = 0
+            with open(alt_seq_path, "w") as fout:
+                for alt_path in candidate_var:
+                    if alt_path == ref_path:
+                        continue
+
+                    alt_cord = candidate_var[alt_path]
+
+                    alt_seq_length = alt_cord[2] - alt_cord[1]
+                    if alt_seq_length <= 0:
+                        continue
+                    if alt_seq_length / ref_seq_length > 3:
+                        continue
+
+                    fout.write(">{}\n".format(os.path.basename(alt_path)))
+                    if alt_cord[3] == "+":
+                        fout.write("{}\n".format(asm_fin_dict[alt_path].fetch(alt_cord[0], alt_cord[1], alt_cord[2]).upper()))
+                    else:
+                        fout.write("{}\n".format(reverse_complement_seq(asm_fin_dict[alt_path].fetch(alt_cord[0], alt_cord[1], alt_cord[2]).upper())))
+
+                    wrote_alt_seq_cnt += 1
+
+
+            if wrote_alt_seq_cnt == 0:
+                os.remove(ref_seq_path)
+                os.remove(alt_seq_path)
+
+        for asm_path in asm_fin_dict:
+            asm_fin_dict[asm_path].close()
+
 
 def cigar_to_list(cigar):
     """
@@ -331,7 +362,7 @@ def detect_small_variants(file, output_path, minimap2_path):
 
     out_paf_file = ref_file.replace(".ref.fa", ".paf")
 
-    os.system("{} -t 4 -Y -c --eqx -x asm20 {} {} > {} 2> /dev/null".format(minimap2_path, ref_file, alt_file, out_paf_file))
+    os.system("{} -t 2 -Y -c --eqx -x asm20 {} {} > {} 2> /dev/null".format(minimap2_path, ref_file, alt_file, out_paf_file))
     # os.system("minimap2 -t 4 -Y -c --eqx -x asm20 --secondary=no -s 25000 -K 8G  {} {} > {} 2> /dev/null".format(ref_file, alt_file, out_paf_file))
 
     # # parse alignment cigar string
@@ -794,25 +825,40 @@ if __name__ == '__main__':
     # # STEP: search for candidates
     print("===========STEP2: search candidates===========")
     unmapped_candidate_dict = search_unmapped_snarl(ref_path, bed_rows_dict, unmapped_bed_rows_dict)
-    nonsnarl_candidate_dict = search_non_snarl(ref_path, input_list, bed_rows_dict)
+    nonsnarl_candidate_dict = search_non_snarl(ref_path, input_list, bed_rows_dict, output_path, thread_num)
     samepath_candiate_dict = search_snarl_same_path(ref_path, input_list, bed_rows_dict)
+
+    for candidate_dict in [samepath_candiate_dict, nonsnarl_candidate_dict, unmapped_candidate_dict]:
+
+        candidate_fout_list = [open(os.path.join(output_path, "tmp.candidate.{}.txt".format(i)), "a") for i in range(thread_num)]
+
+        for node in candidate_dict:
+            random_fout_index = random.randint(0, thread_num - 1)
+
+            out_string = "{}\t".format(node)
+            for asm_path in candidate_dict[node]:
+                cord_info = candidate_dict[node][asm_path]
+
+                out_string += "{}&&{}&&{}&&{}&&{}\t".format(asm_path, cord_info[0], cord_info[1], cord_info[2], cord_info[3])
+            candidate_fout_list[random_fout_index].write(out_string + "\n")
+
+        for fout in candidate_fout_list:
+            fout.close()
+
+    bed_rows_dict, unmapped_bed_rows_dict, samepath_candiate_dict, nonsnarl_candidate_dict, unmapped_candidate_dict, candidate_dict = None, None, None, None, None, None
 
     # # STEP: generate seq
     print("===========STEP3: prepare sequence===========")
     process_pool = multiprocessing.Pool(thread_num)
-    for candidate_dict in [samepath_candiate_dict, nonsnarl_candidate_dict, unmapped_candidate_dict]:
-        for id in candidate_dict:
-            candidate_var = candidate_dict[id]
-            if ref_path not in candidate_var:
-                continue
-            process_pool.apply_async(generate_seq_for_candidate, (ref_path, id, candidate_var, output_path))
+    for candidate_index in range(thread_num):
+        process_pool.apply_async(generate_seq_for_candidate, (ref_path, input_list, candidate_index, output_path))
 
     process_pool.close()
     process_pool.join()
 
     # # STEP: detect variant
     print("===========STEP4: detect variant===========")
-    process_pool = multiprocessing.Pool(int(thread_num / 4))
+    process_pool = multiprocessing.Pool(int(thread_num / 2))
     for file in os.listdir(output_path):
         if ".ref.fa" not in file or ".fa.fai" in file or "+++" not in file:
             continue
