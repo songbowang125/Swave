@@ -201,7 +201,7 @@ python main_small_call.py --input_path assemblies.tsv  --ref_path referece.fasta
 ```
 
 We tested the results using ["HG002 benchmark set"](https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/analysis/NIST_HG002_DraftBenchmark_defrabbV0.020-20250117/) (Variants: CHM13v2.0_HG2-T2TQ100-V1.1_smvar.vcf.gz; High-confident-regions: CHM13v2.0_HG2-T2TQ100-V1.1_smvar.benchmark.bed).
- And this script achieved F1-score of 0.976, comparable to PAV using assemblies (0.974).
+ And this script achieved F1-score of 0.977, comparable to PAV using assemblies (0.974).
 
 
 The MC/Pggb pangenome has already included base-level bubbles for SNP/Indels, so you can extract them as SNP/Indel.

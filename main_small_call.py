@@ -330,6 +330,8 @@ def generate_seq_for_candidate(ref_path, asm_path_list, candidate_index, output_
             if wrote_alt_seq_cnt == 0:
                 os.remove(ref_seq_path)
                 os.remove(alt_seq_path)
+            else:
+                detect_small_variants(ref_seq_path, alt_seq_path, minimap2_path)
 
         for asm_path in asm_fin_dict:
             asm_fin_dict[asm_path].close()
@@ -348,12 +350,9 @@ def cigar_to_list(cigar):
     return ops, lengths
 
 
-def detect_small_variants(file, output_path, minimap2_path):
+def detect_small_variants(ref_file, alt_file, minimap2_path):
 
-    ref_file = os.path.join(output_path, file)
-    alt_file = ref_file.replace(".ref.fa", ".alt.fa")
-
-    if not os.path.exists(alt_file):
+    if not os.path.exists(alt_file) or not os.path.exists(ref_file):
         return 0
 
     # # run alignment
@@ -362,7 +361,7 @@ def detect_small_variants(file, output_path, minimap2_path):
 
     out_paf_file = ref_file.replace(".ref.fa", ".paf")
 
-    os.system("{} -t 2 -Y -c --eqx -x asm20 {} {} > {} 2> /dev/null".format(minimap2_path, ref_file, alt_file, out_paf_file))
+    os.system("{} -t 1 -Y -c --eqx -x asm20 {} {} > {} 2> /dev/null".format(minimap2_path, ref_file, alt_file, out_paf_file))
     # os.system("minimap2 -t 4 -Y -c --eqx -x asm20 --secondary=no -s 25000 -K 8G  {} {} > {} 2> /dev/null".format(ref_file, alt_file, out_paf_file))
 
     # # parse alignment cigar string
@@ -435,6 +434,11 @@ def detect_small_variants(file, output_path, minimap2_path):
                 else:
                     continue
 
+    os.remove(ref_file)
+    os.remove(ref_file + ".fai")
+    os.remove(alt_file)
+    os.remove(alt_file + ".fai")
+    os.remove(out_paf_file)
 
 
 def hap_gt_to_sample_gt(sample_gt, mode="raw"):
@@ -658,13 +662,13 @@ def output_vcf(input_path, ref_path, output_path):
 
                 var_split_cnt += 1
 
-    try:
-        generate_sample_level_vcf(vcf_path, sample_list, input_dict, )
-        generate_sample_level_vcf(vcf_split_path, sample_list, input_dict, mode="split")
-    except Exception:
-
-        print("[Warning]: failed to generate sample-level VCF, but you can still use the hap-level VCF for analysis. Thanks for returning the error to the author")
-        exit(-1)
+    # try:
+    #     generate_sample_level_vcf(vcf_path, sample_list, input_dict, )
+    #     generate_sample_level_vcf(vcf_split_path, sample_list, input_dict, mode="split")
+    # except Exception:
+    #
+    #     print("[Warning]: failed to generate sample-level VCF, but you can still use the hap-level VCF for analysis. Thanks for returning the error to the author")
+    #     exit(-1)
 
 
 def compare(base_vcf, target_vcf, hc_bed):
@@ -848,7 +852,7 @@ if __name__ == '__main__':
     bed_rows_dict, unmapped_bed_rows_dict, samepath_candiate_dict, nonsnarl_candidate_dict, unmapped_candidate_dict, candidate_dict = None, None, None, None, None, None
 
     # # STEP: generate seq
-    print("===========STEP3: prepare sequence===========")
+    print("===========STEP3: detect variant===========")
     process_pool = multiprocessing.Pool(thread_num)
     for candidate_index in range(thread_num):
         process_pool.apply_async(generate_seq_for_candidate, (ref_path, input_list, candidate_index, output_path))
@@ -856,18 +860,8 @@ if __name__ == '__main__':
     process_pool.close()
     process_pool.join()
 
-    # # STEP: detect variant
-    print("===========STEP4: detect variant===========")
-    process_pool = multiprocessing.Pool(int(thread_num / 2))
-    for file in os.listdir(output_path):
-        if ".ref.fa" not in file or ".fa.fai" in file or "+++" not in file:
-            continue
-        process_pool.apply_async(detect_small_variants, (file, output_path, minimap2_path))
 
-    process_pool.close()
-    process_pool.join()
-
-    print("===========STEP5: output and clean===========")
+    print("===========STEP4: output and clean===========")
     output_vcf(input_path, ref_path, output_path)
 
     for file in os.listdir(output_path):
