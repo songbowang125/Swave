@@ -1,5 +1,5 @@
 import os
-from src.pack_graph.op_gfa import GFA
+from src.pack_graph.op_gfa import GFA, gfatools_gfa2fa
 import pysam
 import re
 from src.pack_graph.op_seq import reverse_complement_seq
@@ -31,13 +31,73 @@ def convert_path_to_seq(path, nodes):
     return path_seq
 
 
+def convert_path_to_seq_using_dict(path, node_seq_dict):
+
+    if path == "*":
+        return ""
+
+    path_include_nodes = re.findall(r'[><]([a-zA-Z0-9]+)', path)
+    path_include_nodes_orients = re.findall(r'[><]', path)
+
+    path_seq = ""
+    for i in range(len(path_include_nodes)):
+
+        node, node_orient = path_include_nodes[i], path_include_nodes_orients[i]
+
+        try:
+            if node_orient == ">":
+                node_seq = node_seq_dict[node]
+            else:
+                node_seq = reverse_complement_seq(node_seq_dict[node])
+        except:
+            node_seq = ""
+
+        path_seq += node_seq
+
+    return path_seq
+
+
+def convert_path_to_seq_using_fa(path, fasta_file):
+    if path == "*":
+        return ""
+
+    path_include_nodes = re.findall(r'[><]([a-zA-Z0-9]+)', path)
+    path_include_nodes_orients = re.findall(r'[><]', path)
+
+    path_seq = ""
+    for i in range(len(path_include_nodes)):
+
+        node, node_orient = path_include_nodes[i], path_include_nodes_orients[i]
+
+        try:
+            if node_orient == ">":
+                node_seq = fasta_file.fetch(node)
+            else:
+                node_seq = reverse_complement_seq(fasta_file.fetch(node))
+        except:
+            node_seq = ""
+
+        path_seq += node_seq
+
+    return path_seq
+
+
 def swave_convert(options):
 
     if options.output_path is None:
         options.output_path = os.path.dirname(options.vcf_path)
 
-    gfa = GFA()
-    gfa.parse_gfa_file(options.gfa_path)
+    gfa2fa_path = gfatools_gfa2fa(options)
+
+    node_seq_dict = {}
+    gfa2fa_file = None
+
+    if options.save_memory:
+        gfa2fa_file = pysam.FastaFile(gfa2fa_path)
+    else:
+        with pysam.FastaFile(gfa2fa_path) as fin:
+            for node in fin.references:
+                node_seq_dict[node] = fin.fetch(node)
 
     with pysam.VariantFile(options.vcf_path) as fin, open(os.path.join(options.output_path, os.path.basename(options.vcf_path).replace(".vcf", ".converted.vcf")), "w") as fout, pysam.FastaFile(options.ref_path) as ref_file:
 
@@ -54,13 +114,22 @@ def swave_convert(options):
             ref_path = record_split[3]
             alt_paths = record_split[4].split(",")
 
-            ref_path_seq = convert_path_to_seq(ref_path, gfa.nodes)
-            alt_path_seqs = [convert_path_to_seq(alt_path, gfa.nodes) for alt_path in alt_paths]
+            snarl_start_node = re.findall(r'[><]([a-zA-Z0-9]+)', record.id.split("_")[0])[0]
 
-            snarl_start_node = gfa.nodes[re.findall(r'[><]([a-zA-Z0-9]+)', record.id.split("_")[0])[0]]
-            snarl_start_pos = snarl_start_node.source[1] + snarl_start_node.length
+            if options.save_memory:
+                ref_path_seq = convert_path_to_seq_using_fa(ref_path, gfa2fa_file)
+                alt_path_seqs = [convert_path_to_seq_using_fa(alt_path, gfa2fa_file) for alt_path in alt_paths]
 
-            snarl_start_base = ref_file.fetch(record.contig, snarl_start_pos - 1, snarl_start_pos).upper()
+                snarl_start_base = gfa2fa_file.fetch(snarl_start_node)[-1]
+            else:
+                ref_path_seq = convert_path_to_seq_using_dict(ref_path, node_seq_dict)
+                alt_path_seqs = [convert_path_to_seq_using_dict(alt_path, node_seq_dict) for alt_path in alt_paths]
+
+                snarl_start_base = node_seq_dict[snarl_start_node][-1]
+
+            snarl_start_pos = record.start + 1
+
+            # snarl_start_base = ref_file.fetch(record.contig, snarl_start_pos - 1, snarl_start_pos).upper()
 
             # # deal with empty sequence
             if ref_path_seq == "":

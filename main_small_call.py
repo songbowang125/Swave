@@ -331,7 +331,7 @@ def generate_seq_for_candidate(ref_path, asm_path_list, candidate_index, output_
                 os.remove(ref_seq_path)
                 os.remove(alt_seq_path)
             else:
-                detect_small_variants(ref_seq_path, alt_seq_path, minimap2_path)
+                detect_small_variants(ref_seq_path, alt_seq_path, asm_path_list, minimap2_path)
 
         for asm_path in asm_fin_dict:
             asm_fin_dict[asm_path].close()
@@ -350,7 +350,7 @@ def cigar_to_list(cigar):
     return ops, lengths
 
 
-def detect_small_variants(ref_file, alt_file, minimap2_path):
+def detect_small_variants(ref_file, alt_file, asm_path_list, minimap2_path):
 
     if not os.path.exists(alt_file) or not os.path.exists(ref_file):
         return 0
@@ -368,13 +368,17 @@ def detect_small_variants(ref_file, alt_file, minimap2_path):
     out_call_file = ref_file.replace(".ref.fa", ".call.bed")
 
     with open(out_paf_file) as paf_fin, pysam.FastaFile(ref_file) as ref_fin, pysam.FastaFile(alt_file) as alt_fin, open(out_call_file, "w") as fout:
+        missing_samples = [os.path.basename(path) for path in asm_path_list]  # # initial with all sample
+
         for line in paf_fin:
             if line.startswith("@"):
                 continue
 
             line_split = line.strip().split()
 
-            alt_contig, alt_shift, ref_shift = line_split[0], int(line_split[2]), int(line_split[7])
+            alt_sample, alt_shift, ref_shift = line_split[0], int(line_split[2]), int(line_split[7])
+            if alt_sample in missing_samples:
+                missing_samples.remove(alt_sample)
 
             cigar_string = line_split[21]
             if "cg:Z" not in cigar_string:
@@ -396,18 +400,18 @@ def detect_small_variants(ref_file, alt_file, minimap2_path):
 
                     if op_len < 50:
                         ref_bases = ref_fin.fetch("ref", ref_pointer - 1, ref_pointer)
-                        alt_bases = alt_fin.fetch(alt_contig, alt_pointer - 1, alt_pointer + op_len)
+                        alt_bases = alt_fin.fetch(alt_sample, alt_pointer - 1, alt_pointer + op_len)
 
-                        fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(alt_contig, ref_start + ref_pointer, ref_start + ref_pointer, "INS", op_len, ref_bases, alt_bases))
+                        fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(alt_sample, ref_start + ref_pointer, ref_start + ref_pointer, "INS", op_len, ref_bases, alt_bases))
 
                     alt_pointer += op_len
 
                 elif op == "D":
                     if op_len < 50:
                         ref_bases = ref_fin.fetch("ref", ref_pointer - 1, ref_pointer + op_len)
-                        alt_bases = alt_fin.fetch(alt_contig, alt_pointer - 1, alt_pointer)
+                        alt_bases = alt_fin.fetch(alt_sample, alt_pointer - 1, alt_pointer)
 
-                        fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(alt_contig, ref_start + ref_pointer, ref_start + ref_pointer + op_len, "DEL", op_len, ref_bases, alt_bases))
+                        fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(alt_sample, ref_start + ref_pointer, ref_start + ref_pointer + op_len, "DEL", op_len, ref_bases, alt_bases))
 
                     ref_pointer += op_len
 
@@ -421,9 +425,9 @@ def detect_small_variants(ref_file, alt_file, minimap2_path):
                         for snp_index in range(op_len):
 
                             ref_bases = ref_fin.fetch("ref", ref_pointer, ref_pointer + 1)
-                            alt_bases = alt_fin.fetch(alt_contig, alt_pointer, alt_pointer + 1)
+                            alt_bases = alt_fin.fetch(alt_sample, alt_pointer, alt_pointer + 1)
 
-                            fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(alt_contig, ref_start + ref_pointer + 1, ref_start + ref_pointer + 1, "SNP", 1, ref_bases, alt_bases))
+                            fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(alt_sample, ref_start + ref_pointer + 1, ref_start + ref_pointer + 1, "SNP", 1, ref_bases, alt_bases))
 
                             ref_pointer += 1
                             alt_pointer += 1
@@ -433,6 +437,9 @@ def detect_small_variants(ref_file, alt_file, minimap2_path):
 
                 else:
                     continue
+
+        for sample in missing_samples:
+            fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(sample, 0, 0, "Missing", 0, 0, 0))
 
     os.remove(ref_file)
     os.remove(ref_file + ".fai")
@@ -568,16 +575,13 @@ def output_vcf(input_path, ref_path, output_path):
     sample_list = [os.path.basename(input) for input in input_list]
 
     # # begin
-    vcf_path = os.path.join(output_path, "swave_small.hap_level.vcf")
-    vcf_split_path = os.path.join(output_path, "swave_small.hap_level.split.vcf")
+    vcf_path = os.path.join(output_path, "tmp.swave_small.hap_level.vcf")
 
-    with open(vcf_path, "w") as fout, open(vcf_split_path, "w") as fout_split:
+    with open(vcf_path, "w") as fout:
 
         output_vcf_header(fout, ref_path, sample_list)
-        output_vcf_header(fout_split, ref_path, sample_list)
 
         var_cnt = 0
-        var_split_cnt = 0
 
         for call_bed in os.listdir(output_path):
 
@@ -587,7 +591,8 @@ def output_vcf(input_path, ref_path, output_path):
             chrom = call_bed.split(".")[1].split("+++")[0]
 
             var_collect = {}
-            var_collect_split = {}
+
+            missing_samples = []
 
             with open(os.path.join(output_path, call_bed)) as fin:
 
@@ -595,9 +600,12 @@ def output_vcf(input_path, ref_path, output_path):
                     line_split = line.strip().split("\t")
                     sample, start, end, type, length, ref_bases, alt_base = line_split[ : ]
 
+                    if type == "Missing":
+                        missing_samples.append(sample)
+                        continue
+
                     allele_id = "{}-{}".format(ref_bases, alt_base)
                     pos_id = "{}-{}-{}-{}".format(chrom, start, end, type)
-                    var_id = "{}-{}".format(pos_id, allele_id)
 
                     # # STEP: update at position-level (also the snarl level for SV)
                     if pos_id not in var_collect:
@@ -606,10 +614,6 @@ def output_vcf(input_path, ref_path, output_path):
                         var_collect[pos_id][allele_id] = []
                     var_collect[pos_id][allele_id].append(sample)
 
-                    # # STEP: update at the split/allele level (also the split or allele level for SV)
-                    if var_id not in var_collect_split:
-                        var_collect_split[var_id] = []
-                    var_collect_split[var_id].append(sample)
 
             # # STEP: output at position-level (also the snarl level for SV)
             for pos_id in sorted(var_collect.keys()):
@@ -622,7 +626,7 @@ def output_vcf(input_path, ref_path, output_path):
                 ac = 0
 
                 # # generate gt flag
-                sample_gts = ["0" for i in range(len(sample_list))]
+                sample_gts = ["0" if sample not in missing_samples else "." for sample in sample_list]
                 for allele_cnt in range(len(include_alleles)):
                     allele = include_alleles[allele_cnt]
                     alt_bases_list.append(allele.split("-")[1])
@@ -639,29 +643,6 @@ def output_vcf(input_path, ref_path, output_path):
 
                 var_cnt += 1
 
-            # # STEP: output the split/allele level (also the split or allele level for SV)
-            for var_id in sorted(var_collect_split.keys()):
-                chrom, start, end, type, ref_bases, alt_base = var_id.split("-")[:]
-                if len(ref_bases) == len(alt_base):
-                    svlen = len(alt_base)
-                else:
-                    svlen = abs(len(alt_base) - len(ref_bases))
-
-                include_samples = var_collect_split[var_id]
-
-                # # generate gt flag
-                sample_gts = ["0" for i in range(len(sample_list))]
-                for sample in include_samples:
-                    sample_gts[sample_list.index(sample)] = "1"
-
-                # # output
-                ac = len(include_samples)
-                ns = len(sample_list)
-                af = round(ac / ns, 5)
-                fout_split.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\tSVLEN={};SVTYPE={};AC={};AF={};NS={}\tGT\t{}\n".format(chrom, start, var_split_cnt, ref_bases, alt_base, ".", ".", svlen, type, ac, af, ns, "\t".join(sample_gts)))
-
-                var_split_cnt += 1
-
     # try:
     #     generate_sample_level_vcf(vcf_path, sample_list, input_dict, )
     #     generate_sample_level_vcf(vcf_split_path, sample_list, input_dict, mode="split")
@@ -669,6 +650,158 @@ def output_vcf(input_path, ref_path, output_path):
     #
     #     print("[Warning]: failed to generate sample-level VCF, but you can still use the hap-level VCF for analysis. Thanks for returning the error to the author")
     #     exit(-1)
+
+def merge_and_output_same_bkp_records(same_bkp_records, fout, output_sample_num):
+
+    # # only one record (there is no same bkp records for this record)
+    if len(same_bkp_records) == 1:
+        fout.write(str(same_bkp_records[0]))
+
+    # # more than one record, then merge same ref allele records
+    else:
+
+        # # find same ref allele records
+        same_ref_records = {}
+
+        for record in same_bkp_records:
+            ref_allele = record.ref
+
+            if ref_allele not in same_ref_records:
+                same_ref_records[ref_allele] = []
+            same_ref_records[ref_allele].append(record)
+
+        # # merge same ref allele records
+        for ref_allele in same_ref_records:
+            # # only one record (there is no same ref allele record for this ref allele)
+            if len(same_ref_records[ref_allele]) == 1:
+                fout.write(str(same_ref_records[ref_allele][0]))
+            else:
+                all_alt_alleles = []
+                sample_alt_allele_dict = {sample_index: "." for sample_index in range(output_sample_num)}
+
+                final_ac = 0
+                for record in same_ref_records[ref_allele]:
+                    alt_alleles = record.alts
+                    final_ac += record.info["AC"]
+
+                    all_alt_alleles.extend(alt_alleles)
+
+                    sample_gts = str(record).strip().split("\t")[9:]
+                    for sample_index in range(len(sample_gts)):
+                        sample_gt = sample_gts[sample_index]
+
+                        if sample_gt == ".":
+                            continue
+                        if sample_gts == "0" and sample_alt_allele_dict[sample_index] == ".":
+                            sample_alt_allele_dict[sample_index] = "0"
+                            continue
+                        if sample_gts not in [".", "0"]:
+                            sample_alt_allele_dict[sample_index] = alt_alleles[int(sample_gt) - 1]  # # why -1: ref allele is 0
+                            continue
+
+                # # output
+                final_chrom, final_start, final_var_cnt = same_ref_records[ref_allele][0].contig, same_ref_records[ref_allele][0].start + 1, same_ref_records[ref_allele][0].id
+                final_af = round(final_ac / output_sample_num, 5)
+
+                all_alt_alleles = list(set(sorted(all_alt_alleles, key=lambda x: len(x))))
+
+                final_sample_gts = []
+                for sample_index in range(output_sample_num):
+                    sample_allele = sample_alt_allele_dict[sample_index]
+
+                    if sample_allele in [".", "0"]:
+                        final_sample_gts.append(sample_allele)
+                    else:
+                        final_sample_gts.append(str(all_alt_alleles.index(sample_allele) + 1))      # # why +1: ref allele is 0
+
+                fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\tAC={};AF={};NS={}\tGT\t{}\n".format(final_chrom, final_start, final_var_cnt, ref_allele, ",".join(all_alt_alleles), ".", ".", final_ac, final_af, output_sample_num, "\t".join(final_sample_gts)))
+
+
+def refine_vcf(output_path):
+
+    raw_vcf_path = os.path.join(output_path, "tmp.swave_small.hap_level.vcf")
+    srt_vcf_path = os.path.join(output_path, "tmp.swave_small.hap_level.srt.vcf")
+
+    os.system("{} sort -o {} {}".format(bcftools_path, srt_vcf_path, raw_vcf_path))
+
+    final_vcf_path = os.path.join(output_path, "swave_small.hap_level.vcf")
+    final_vcf_fout = open(final_vcf_path, "w")
+
+    # # load all record
+    srt_vcf_records = []
+    with pysam.VariantFile(srt_vcf_path) as fin:
+        final_vcf_fout.write(str(fin.header))
+
+        output_sample_num = len(str(fin.header).strip().split("\n")[-1].split("\t")[9: ])
+
+        for record in fin:
+            srt_vcf_records.append(record)
+
+    if len(srt_vcf_records) == 0:
+        print("[Error]: Empty detection results")
+        exit(-1)
+
+    # # find same bkp records
+    same_bkp_records = [srt_vcf_records[0]]
+    for i in range(1, len(srt_vcf_records)):
+        cur_record = srt_vcf_records[i]
+
+        # # find a new bkp
+        if cur_record.start != same_bkp_records[-1].start:
+            merge_and_output_same_bkp_records(same_bkp_records, final_vcf_fout, output_sample_num)
+
+            # # reset
+            same_bkp_records = [cur_record]
+
+        else:
+            same_bkp_records.append(cur_record)
+
+    # # deal with the last one
+    merge_and_output_same_bkp_records(same_bkp_records, final_vcf_fout, output_sample_num)
+
+    final_vcf_fout.close()
+
+
+def split_vcf(output_path):
+    final_vcf_path = os.path.join(output_path, "swave_small.hap_level.vcf")
+    final_split_vcf_path = os.path.join(output_path, "swave_small.hap_level.split.vcf")
+
+
+    with pysam.VariantFile(final_vcf_path) as fin, open(final_split_vcf_path, "w") as fout:
+
+        fout.write(str(fin.header))
+
+        for record in fin:
+            alt_alleles = record.alts
+            # # only one alt allele, then output
+            if len(alt_alleles) == 1:
+                fout.write(str(record))
+
+            else:
+                sample_gts = str(record).strip().split("\t")[9:]
+
+                for alt_allele_index in range(len(alt_alleles)):
+
+                    split_ac = 0
+                    split_ns = 0
+
+                    split_sample_gts = []
+
+                    for gt in sample_gts:
+                        split_ns += 1
+
+                        if gt == ".":
+                            split_sample_gts.append(".")
+                        else:
+                            if int(gt) - 1 == alt_allele_index:
+                                split_sample_gts.append("1")
+                                split_ac += 1
+                            else:
+                                split_sample_gts.append("0")
+
+                    split_af = round(split_ac / split_ns, 5)
+
+                    fout.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\tAC={};AF={};NS={}\tGT\t{}\n".format(record.contig, record.start + 1, "{}_{}".format(record.id, alt_allele_index), record.ref, alt_alleles[alt_allele_index], ".", ".", split_ac, split_af, split_ns, "\t".join(split_sample_gts)))
 
 
 def compare(base_vcf, target_vcf, hc_bed):
@@ -793,13 +926,20 @@ def parse_arguments(arguments=sys.argv[1:]):
     inout_params.add_argument('--output_path', dest="output_path", type=os.path.abspath, required=True, help='Absolute path to output')
 
     inout_params.add_argument('--minigraph_callbed_folder', dest="minigraph_callbed_folder", type=os.path.abspath, required=True, help='Absolute path to the folder storing minigraph --call BED files')
-    inout_params.add_argument('--minimap2_path', dest="minimap2_path", required=True, help='Absolute path to minimap2')
+    inout_params.add_argument('--minimap2_path', dest="minimap2_path", required=True, help='Absolute path to minimap2 (align sequence)')
+    inout_params.add_argument('--bcftools_path', dest="bcftools_path", required=True, help='Absolute path to bcftools (sort VCF)')
 
     inout_params.add_argument('--thread_num', dest="thread_num", type=int, required=True, help='Thread number')
 
     return parser.parse_args(arguments)
 
 if __name__ == '__main__':
+    # compare("/mnt/d/workspace/swave/t2t_hg002/CHM13v2.0_HG2-T2TQ100-V1.1_smvar.vcf.gz", "/mnt/d/workspace/swave/t2t_hg002/test5/swave_small.hap_level.split.vcf", "/mnt/d/workspace/swave/t2t_hg002/CHM13v2.0_HG2-T2TQ100-V1.1_smvar.benchmark.bed")
+    # compare("/mnt/d/workspace/swave/t2t_hg002/CHM13v2.0_HG2-T2TQ100-V1.1_smvar.vcf.gz", "/mnt/d/workspace/swave/t2t_hg002/test11/swave_small.hap_level.split.vcf", "/mnt/d/workspace/swave/t2t_hg002/CHM13v2.0_HG2-T2TQ100-V1.1_smvar.benchmark.bed")
+    #
+    # compare("/mnt/d/workspace/swave/t2t_hg002/CHM13v2.0_HG2-T2TQ100-V1.1_smvar.vcf.gz", "/mnt/d/workspace/swave/t2t_hg002/test11/swave_small.hap_level.split.vcf", None)
+    #
+    # exit()
 
     options = parse_arguments()
     ref_path = options.ref_path
@@ -807,6 +947,7 @@ if __name__ == '__main__':
     output_path = options.output_path
     minigraph_callbed_folder = options.minigraph_callbed_folder
     minimap2_path = options.minimap2_path
+    bcftools_path = options.bcftools_path
     thread_num = options.thread_num
 
     if shutil.which(minimap2_path) is None:
@@ -863,6 +1004,10 @@ if __name__ == '__main__':
 
     print("===========STEP4: output and clean===========")
     output_vcf(input_path, ref_path, output_path)
+
+    refine_vcf(output_path)
+
+    split_vcf(output_path)
 
     for file in os.listdir(output_path):
         if file.startswith("tmp."):

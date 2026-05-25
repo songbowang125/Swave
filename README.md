@@ -182,6 +182,12 @@ If you need to generate it by your self, run:
   ```commandline
     python Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source cactus (or pggb) --gfa_path pangenome.gfa.gz --decomposed_vcf pangenome.raw.vcf.gz --output_path ./
   ```
+
+If you meet the error bellow, please add the /path/to/ref.fa to your assemblies.tsv:
+  ```
+  [ERROR] Fail interpreting for bin 0. Error log: <class 'ValueError'>: 'ref.fa' is not in list. Locate At: [<FrameSummary file Swave/src/pack_sv/op_sv.py, line 902 in interpret_one_bin>, <FrameSummary file Swave/src/pack_sv/op_sv.py, line 1130 in generate_vcf_records>, <FrameSummary file Swave/src/pack_sv/op_sv.py, line 968 in output_at_top_and_sub_snarl_level>]
+  ```
+
 2.2 Check outputs:
 ```commandline
   One log file and two result files are generated, including:

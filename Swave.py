@@ -54,6 +54,7 @@ def parse_arguments(arguments=sys.argv[1:]):
     parser_convert.add_argument('--ref_path', dest="ref_path", type=os.path.abspath, required=True, help='Absolute path to reference')
     parser_convert.add_argument('--output_path', dest="output_path", type=os.path.abspath, default=None, help='Absolute path to output')
     parser_convert.add_argument('--force_pangenie', action="store_true", default=False, help='Force output sequences to meet the requirement of pangenie index')
+    parser_convert.add_argument('--save_memory', action="store_true", default=False, help='Run with less memory but more time')
 
     parser_convert_Plines = subparsers.add_parser('convert_Plines', help='Convert the minigraph call VCF into GFA P lines')
     parser_convert_Plines.add_argument('--gfa_path', dest="gfa_path", type=os.path.abspath, required=True, help='Absolute path to gfa')
