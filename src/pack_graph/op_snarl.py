@@ -168,7 +168,10 @@ def retrieve_snarl_from_vg_decomposed(gfa_minigraph, options):
                 if sample_name not in options.input_dict:
                     continue
 
-                hap_gts = sample_gt.split("|")
+                # # fix on v1.5.4, for the non-phased conditions
+                # hap_gts = sample_gt.split("|")
+                hap_gts = sample_gt.replace("/", "|").split("|")
+
                 for hap_index in range(len(hap_gts)):
                     hap_gt = hap_gts[hap_index]
 
