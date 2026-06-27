@@ -1081,7 +1081,7 @@ def calculate_ac_af_an_ns(gt_list, options):
 
     AN = len(options.alt_asm_names) - non_called_cnt
     AF = round(AC / AN, 5)
-    NS = len(options.spec_samples)
+    NS = len(list(options.input_dict.keys()))
 
     return AC, AF, AN, NS
 

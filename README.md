@@ -3,7 +3,14 @@ Swave detects structural variants (SVs) and complex SVs from a pangenome graph c
 
 <div align=left><img width=80% height=80% src="https://github.com/songbowang125/Swave/blob/main/workflow.svg"/></div> 
 
+## Citation
+Swave full paper:
 
+[1] Wang, S., Xu, T., Zhang, P. et al. Population-level structural variant characterization using pangenome graphs. Nat Genet 58, 664–672 (2026). https://doi.org/10.1038/s41588-026-02538-6
+
+Research highlight of Swave:
+
+[2] Wang, S. Resolving structural variants in pangenome graphs with Swave. Nat Rev Genet (2026). https://doi.org/10.1038/s41576-026-00972-0
 ## License
 
 Swave is free for non-commercial use by academic, government, and non-profit/not-for-profit institutions. A commercial version of the software is available and licensed through Xi’an Jiaotong University.
@@ -183,10 +190,7 @@ If you need to generate it by your self, run:
     python Swave.py call --input_path assemblies.tsv  --ref_path referece.fasta --gfa_source cactus (or pggb) --gfa_path pangenome.gfa.gz --decomposed_vcf pangenome.raw.vcf.gz --output_path ./
   ```
 
-If you meet the error bellow, please add the /path/to/ref.fa to your assemblies.tsv:
-  ```
-  [ERROR] Fail interpreting for bin 0. Error log: <class 'ValueError'>: 'ref.fa' is not in list. Locate At: [<FrameSummary file Swave/src/pack_sv/op_sv.py, line 902 in interpret_one_bin>, <FrameSummary file Swave/src/pack_sv/op_sv.py, line 1130 in generate_vcf_records>, <FrameSummary file Swave/src/pack_sv/op_sv.py, line 968 in output_at_top_and_sub_snarl_level>]
-  ```
+
 
 2.2 Check outputs:
 ```commandline

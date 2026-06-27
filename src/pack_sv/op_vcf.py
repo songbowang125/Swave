@@ -95,7 +95,7 @@ def generate_sample_level_vcf(hap_level_path, options, mode="raw"):
 
     sample_level_vcf_path = hap_level_path.replace("hap_level", "sample_level").replace("tmp.", "")
 
-    sample_names = options.spec_samples
+    sample_names = list(options.input_dict.keys())
 
     sample_hap_files = []
     for sample in sample_names:

@@ -27,9 +27,10 @@ def parse_arguments(arguments=sys.argv[1:]):
     parser_call.add_argument('--gfa_source', dest="gfa_source", choices=['minigraph', 'cactus', 'pggb'], required=True, help='The source of GFA. Choose from [minigraph, cactus, pggb].')
     parser_call.add_argument('--decomposed_vcf', dest="decomposed_vcf", type=os.path.abspath, required=False, default=None, help='The decomposed VCF from vg (could be processed by vcfbub and vcfwave), required for cactus and pggb graphs')
 
-    parser_call.add_argument('--output_mode', dest="output_mode", choices=['auto', 'population', 'single'], default='auto', help='Mode of output. Choose from [auto, population, single]')
+    # # removed from v1.6
+    # parser_call.add_argument('--output_mode', dest="output_mode", choices=['auto', 'population', 'single'], default='auto', help='Mode of output. Choose from [auto, population, single]')
+    # parser_call.add_argument('--spec_samples', dest='spec_samples', metavar="IN", nargs="+", type=str, default=["all"], help='Candidate samples')
 
-    parser_call.add_argument('--spec_samples', dest='spec_samples', metavar="IN", nargs="+", type=str, default=["all"], help='Candidate samples')
     parser_call.add_argument('--spec_snarl', dest='spec_snarl', type=str, default=None, help="Only call the specific snarl (e.g. '>s1>s2')")
     parser_call.add_argument('--spec_path', dest='spec_path', type=str, default=None, help="Only call the specific path (e.g. '>s3>s4')")
 
@@ -106,18 +107,10 @@ def check_arguments(options):
     check auguments and assign defaults
     """
 
-    if options.command in ["add"]:
-        options.gfa_source = "minigraph"
-        options.spec_snarl = None
-        options.spec_path = None
-        options.spec_samples = ["all"]
-        options.output_mode = "population"
-
-    else:
-        if options.gfa_source in ["cactus", "pggb"]:
-            if options.decomposed_vcf is None:
-                logging.error("For cactus and pggb graphs, the vg decomposed VCF is required")
-                exit(-1)
+    if options.gfa_source in ["cactus", "pggb"]:
+        if options.decomposed_vcf is None:
+            logging.error("For cactus and pggb graphs, the vg decomposed VCF is required")
+            exit(-1)
 
     options.img_output_path = os.path.join(options.output_path, "tmp_imgs")
     options.npz_output_path = os.path.join(options.output_path, "tmp_npzs")
@@ -139,22 +132,27 @@ def check_arguments(options):
 
     options.input_dict, options.input_list = load_from_sample_tsv(options.input_path)
 
+    # # removed from v1.6
     # # STEP: determine sample numbers and output mode
-    if options.spec_samples == ["all"]:
-        options.spec_samples = list(options.input_dict.keys())
+    # if options.spec_samples == ["all"]:
+    #     options.spec_samples = list(options.input_dict.keys())
 
-    if options.output_mode == "auto":
-        if len(options.spec_samples) > 1:
-            options.output_mode = "population"
-        else:
-            options.output_mode = "single"
-    # #
+    # if options.output_mode == "auto":
+    #     if len(options.spec_samples) > 1:
+    #         options.output_mode = "population"
+    #     else:
+    #         options.output_mode = "single"
+    #
+    # options.asm_paths = [options.ref_path]
+    # for sample in options.spec_samples:
+    #     if sample not in options.input_dict:
+    #         logging.error("Input sample name '{}' not shown in the input tsv file".format(sample))
+    #         exit(-1)
+    #
+    #     options.asm_paths.extend(options.input_dict[sample])
+
     options.asm_paths = [options.ref_path]
-    for sample in options.spec_samples:
-        if sample not in options.input_dict:
-            logging.error("Input sample name '{}' not shown in the input tsv file".format(sample))
-            exit(-1)
-
+    for sample in options.input_dict:
         options.asm_paths.extend(options.input_dict[sample])
 
     # #

@@ -145,6 +145,9 @@ def retrieve_snarl_from_vg_decomposed(gfa_minigraph, options):
 
             if snarl_id not in gfa_minigraph.snarls:
                 gfa_minigraph.snarls[snarl_id] = Snarl(snarl_start_node_id, snarl_start_node_orient, snarl_end_node_id, snarl_end_node_orient, snarl_ref_chrom, snarl_ref_start, snarl_ref_end)
+            # # add in v1.6. in the decomposed VCF, one line include all info for one snarl, if the snarl has existed (more than one VCF lines contain the same snarl), then we only use the first one)
+            else:
+                continue
 
             snarl_obj = gfa_minigraph.snarls[snarl_id]
 
